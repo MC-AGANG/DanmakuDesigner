@@ -1,3 +1,5 @@
 <Solution>
+  <Project Path="../AgSTG/AgSTG/AgSTG.vbproj" />
+  <Project Path="../AgSTG/ResourcePack/ResourcePack.vbproj" />
   <Project Path="DanmakuDesigner/DanmakuDesigner.vbproj" />
 </Solution>

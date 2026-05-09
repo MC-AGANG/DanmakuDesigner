@@ -13,9 +13,8 @@ Class Application
     ' Application-level events, such as Startup, Exit, and DispatcherUnhandledException
     ' can be handled in this file.
     Private Async Function LoadResource() As Task
-        Await Task.Run(Sub()
-                           Textures.Load()
-                           Sounds.Load()
-                       End Sub)
+        Textures.Load()
+        Sounds.Load()
+        DD.Textures.Load()
     End Function
 End Class

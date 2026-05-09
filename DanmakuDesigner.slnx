@@ -1,5 +1,7 @@
 <Solution>
   <Project Path="../AgSTG/AgSTG/AgSTG.vbproj" />
   <Project Path="../AgSTG/ResourcePack/ResourcePack.vbproj" />
+  <Project Path="AgControls/AgControls.vbproj" Id="3a2b61ca-26e1-4258-87ff-3145152eb7f1" />
   <Project Path="DanmakuDesigner/DanmakuDesigner.vbproj" />
+  <Project Path="ResourcePack.DD/ResourcePack.DD.vbproj" Id="e007e1ca-e019-4148-b194-610f44678ae7" />
 </Solution>

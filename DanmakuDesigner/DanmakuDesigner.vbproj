@@ -5,10 +5,15 @@
     <TargetFramework>net10.0-windows</TargetFramework>
     <RootNamespace>DanmakuDesigner</RootNamespace>
     <UseWPF>true</UseWPF>
+    <ApplicationIcon>logo.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
     <None Remove="bk_load.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="logo.ico" />
   </ItemGroup>
 
   <ItemGroup>
@@ -26,6 +31,8 @@
   <ItemGroup>
     <ProjectReference Include="..\..\AgSTG\AgSTG\AgSTG.vbproj" />
     <ProjectReference Include="..\..\AgSTG\ResourcePack\ResourcePack.vbproj" />
+    <ProjectReference Include="..\AgControls\AgControls.vbproj" />
+    <ProjectReference Include="..\ResourcePack.DD\ResourcePack.DD.vbproj" />
   </ItemGroup>
 
   <ItemGroup>

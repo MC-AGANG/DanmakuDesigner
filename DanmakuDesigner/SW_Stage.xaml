@@ -1,0 +1,21 @@
+﻿<UserControl x:Class="SW_Stage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:DanmakuDesigner"
+             xmlns:AS="clr-namespace:AgSTG;assembly=AgSTG"
+             mc:Ignorable="d" 
+             d:DesignHeight="448" d:DesignWidth="384"
+             Background="#FF2D2D30"
+             SizeChanged="UserControl_SizeChanged"
+             Loaded="UserControl_Loaded">
+    <Canvas Height="448" Width="384" Name="GD_Main" Background="Black" HorizontalAlignment="Center" VerticalAlignment="Center" ClipToBounds="False">
+        <Canvas.RenderTransform>
+            <ScaleTransform x:Name="Me_Scale" CenterX="192" CenterY="224"/>
+        </Canvas.RenderTransform>
+        
+
+
+    </Canvas>
+</UserControl>

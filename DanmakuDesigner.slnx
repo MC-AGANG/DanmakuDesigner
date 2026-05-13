@@ -1,4 +1,5 @@
 <Solution>
+  <Project Path="../AgSTG/AgSTG.Core/AgSTG.Core.vbproj" />
   <Project Path="../AgSTG/AgSTG/AgSTG.vbproj" />
   <Project Path="../AgSTG/ResourcePack/ResourcePack.vbproj" />
   <Project Path="AgControls/AgControls.vbproj" Id="3a2b61ca-26e1-4258-87ff-3145152eb7f1" />

@@ -44,5 +44,7 @@
 
     Private Sub UserControl_MouseLeave(sender As Object, e As MouseEventArgs)
         Background = New SolidColorBrush(Color.FromArgb(1, 255, 255, 255))
+        RC_Icon.Opacity = 1
+        LB_Text.Opacity = 1
     End Sub
 End Class

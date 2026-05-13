@@ -8,15 +8,15 @@
         xmlns:AGC="clr-namespace:AgControls;assembly=AgControls"
         xmlns:RS="clr-namespace:ResourcePack.DD;assembly=ResourcePack.DD"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800" WindowStyle="None"
+        Title="MainWindow" Height="600" Width="800" WindowStyle="None"
         AllowsTransparency="True"
         Background="Transparent"
         Loaded="Window_Loaded"
-        SizeChanged="Window_SizeChanged"
+        SizeChanged="Window_SizeChanged" MinWidth="640" MinHeight="480"
         >
     <shell:WindowChrome.WindowChrome>
         <shell:WindowChrome CaptionHeight="38"
-                           ResizeBorderThickness="8"
+                           ResizeBorderThickness="9"
                            GlassFrameThickness="0"
                            />
     </shell:WindowChrome.WindowChrome>
@@ -115,24 +115,83 @@
             <Grid Grid.Row="1" Grid.Column="1" Background="#FF2D2D30">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="38"/>
-                    <RowDefinition Height="48"/>
+                    <RowDefinition Height="40"/>
                     <RowDefinition/>
                     <RowDefinition Height="32"/>
                 </Grid.RowDefinitions>
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition/>
-                        <ColumnDefinition Width="192"/>
+                        <ColumnDefinition Width="168"/>
                     </Grid.ColumnDefinitions>
                     <Rectangle Fill="#FF2D2D30" MouseDown="Rectangle_MouseDown"/>
                     <StackPanel Orientation="Horizontal">
                         <Rectangle Width="38" Fill="{x:Static RS:Textures.Logo_w}"/>
+                        <Menu Height="28" Background="#FF2D2D30" Foreground="White" shell:WindowChrome.IsHitTestVisibleInChrome="True" HorizontalAlignment="Center" VerticalAlignment="Center" HorizontalContentAlignment="Center">
+                            <MenuItem Width="64" Header="文件" Height="28" Padding="20,0,6,0" Background="#FF2D2D30">
+                                <AGC:Button Height="32" Content="新建"/>
+                                <AGC:Button Height="32" Content="打开"/>
+                                <AGC:Button Height="32" Content="保存"/>
+                                <AGC:Button Height="32" Content="另存为"/>
+                                <AGC:Button Height="32" Content="关闭"/>
+                            </MenuItem>
+                        </Menu>
                     </StackPanel>
                     <StackPanel Grid.Column="1" Orientation="Horizontal">
-                        <AGC:Button Width="64" Name="BT_Minimize" Icon="{x:Static RS:Textures.BT_Minimize}" Clicked="BT_Minimize_Clicked" shell:WindowChrome.IsHitTestVisibleInChrome="True"/>
-                        <AGC:Button Width="64" Name="BT_Maximize" Icon="{x:Static RS:Textures.BT_Maximize}" Clicked="BT_Maximize_Clicked" shell:WindowChrome.IsHitTestVisibleInChrome="True"/>
-                        <AGC:Button Width="64" Name="BT_Close" Icon="{x:Static RS:Textures.BT_Close}" Clicked="BT_Close_Clicked" shell:WindowChrome.IsHitTestVisibleInChrome="True"/>
+                        <AGC:Button Width="56" Name="BT_Minimize" Icon="{x:Static RS:Textures.BT_Minimize}" Clicked="BT_Minimize_Clicked" shell:WindowChrome.IsHitTestVisibleInChrome="True"/>
+                        <AGC:Button Width="56" Name="BT_Maximize" Icon="{x:Static RS:Textures.BT_Maximize}" Clicked="BT_Maximize_Clicked" shell:WindowChrome.IsHitTestVisibleInChrome="True"/>
+                        <AGC:Button Width="56" Name="BT_Close" Icon="{x:Static RS:Textures.BT_Close}" Clicked="BT_Close_Clicked" shell:WindowChrome.IsHitTestVisibleInChrome="True"/>
                     </StackPanel>
+                </Grid>
+                <StackPanel Grid.Row="1" Orientation="Horizontal" Height="32">
+                    <AGC:Button Margin="16,0,0,0" Width="32" Name="BT_NewFile" Icon="{x:Static RS:Textures.BT_New}"/>
+                    <AGC:Button Width="32" Name="BT_Open" Icon="{x:Static RS:Textures.BT_Open}"/>
+                    <AGC:Button Width="32" Name="BT_Save" Icon="{x:Static RS:Textures.BT_Save}"/>
+                    <AGC:Button Width="32" Name="BT_SaveAs" Icon="{x:Static RS:Textures.BT_SaveAs}"/>
+                    <AGC:Button Margin="0,0,4,0" Width="32" Name="BT_CloseFile" Icon="{x:Static RS:Textures.BT_CloseFile}"/>
+                    <Rectangle Width="1" Height="32" Fill="DarkGray"/>
+                    <AGC:Button Margin="4,0,0,0" Width="32" Name="BT_Undo" Icon="{x:Static RS:Textures.BT_Undo}"/>
+                    <AGC:Button Margin="0,0,4,0" Width="32" Name="BT_Redo" Icon="{x:Static RS:Textures.BT_Redo}"/>
+                    <Rectangle Width="1" Height="32" Fill="DarkGray"/>
+                    <AGC:Button Margin="4,0,0,0" Width="32" Name="BT_Run" Icon="{x:Static RS:Textures.BT_Run}" Clicked="BT_Run_Clicked"/>
+                    <AGC:Button Width="32" Name="BT_Pause" Icon="{x:Static RS:Textures.BT_Pause}" Clicked="BT_Pause_Clicked"/>
+                    <AGC:Button Width="32" Name="BT_Stop" Icon="{x:Static RS:Textures.BT_Stop}"/>
+                    <AGC:Button Width="32" Name="BT_Refresh" Icon="{x:Static RS:Textures.BT_Refresh}"/>
+                </StackPanel>
+                <Grid Name="WorkArea" Grid.Row="2">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="3*" MinHeight="256"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition MinHeight="64"/>
+                    </Grid.RowDefinitions>
+                    <GridSplitter Height="5" Grid.Row="1" ResizeDirection="Rows"
+                                  ResizeBehavior="PreviousAndNext"
+                                  Background="#FF1C1C1C"
+                                  HorizontalAlignment="Stretch"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition MinWidth="128"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition MinWidth="64"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition MinWidth="128"/>
+                        </Grid.ColumnDefinitions>
+                        <local:SubWindow Title="舞台">
+                            <local:SW_Stage Grid.Row="1" Grid.Column="1"/>
+                        </local:SubWindow>
+                        <GridSplitter Background="#FF1C1C1C" Width="5" Grid.Column="1" ResizeBehavior="PreviousAndNext"/>
+                        <local:SubWindow Title="性能" Grid.Column="2">
+                            
+                        </local:SubWindow>
+                        <GridSplitter Background="#FF1C1C1C" Width="5" Grid.Column="3" ResizeBehavior="PreviousAndNext"/>
+                        <local:SubWindow Title="行为" Grid.Column="4">
+
+                        </local:SubWindow>
+                    </Grid>
+                    
+                    <local:SubWindow Title="时间轴" Grid.Row="2">
+                        
+                    </local:SubWindow>
                 </Grid>
             </Grid>
         </Grid>

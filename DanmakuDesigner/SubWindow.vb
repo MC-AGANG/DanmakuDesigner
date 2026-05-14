@@ -51,17 +51,12 @@ Public Class SubWindow
     Public Sub New()
         RowDefinitions.Add(New RowDefinition() With {.Height = New GridLength(32)})
         RowDefinitions.Add(New RowDefinition())
-        RowDefinitions.Add(New RowDefinition() With {.Height = New GridLength(8)})
-        ColumnDefinitions.Add(New ColumnDefinition() With {.Width = New GridLength(8)})
         ColumnDefinitions.Add(New ColumnDefinition())
-        ColumnDefinitions.Add(New ColumnDefinition() With {.Width = New GridLength(8)})
         Background = New SolidColorBrush(Color.FromArgb(255, 45, 45, 48))
         Dim rec As New Rectangle With {.Fill = New SolidColorBrush(Color.FromArgb(255, 26, 26, 26))}
-        SetColumn(rec, 1)
         SetRow(rec, 1)
         LB_Title.FontSize = 16
         LB_Title.Foreground = Brushes.White
-        SetColumn(LB_Title, 1)
         Children.Add(LB_Title)
         Children.Add(rec)
     End Sub

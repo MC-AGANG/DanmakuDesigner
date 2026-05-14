@@ -1,0 +1,35 @@
+﻿<UserControl x:Class="SW_Performance"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:DanmakuDesigner"
+             xmlns:AGC="clr-namespace:AgControls;assembly=AgControls"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="320">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="24"/>
+            <RowDefinition/>
+            <RowDefinition Height="24"/>
+            <RowDefinition/>
+            <RowDefinition Height="24"/>
+            <RowDefinition Height="24"/>
+        </Grid.RowDefinitions>
+        <Label Foreground="White" Background="Black" Content="帧率（FPS）"/>
+        <AGC:Chart Grid.Row="1" ShowScrollBar="False" Name="CT_FPS" x:FieldModifier="public" Max="120" Min="0">
+            
+        </AGC:Chart>
+        <Label Grid.Row="2" Foreground="White" Background="Black" Content="CPU压力（MSPT）"/>
+        <AGC:Chart Grid.Row="3" Name="CT_MSPT" x:FieldModifier="public" ScrollChanged="CT_MSPT_ScrollChanged" Max="50" Min="0">
+
+        </AGC:Chart>
+        <Label Grid.Row="4" Foreground="White" Name="LB_Coordinate">
+            X:0 Y:0
+        </Label>
+        <Label Grid.Row="5" Foreground="White" Name="LB_Count">
+            实体数：0
+        </Label>
+    </Grid>
+</UserControl>

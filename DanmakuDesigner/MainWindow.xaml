@@ -13,6 +13,9 @@
         Background="Transparent"
         Loaded="Window_Loaded"
         SizeChanged="Window_SizeChanged" MinWidth="640" MinHeight="480"
+        Activated="Window_Activated"
+        Deactivated="Window_Deactivated"
+        Closed="Window_Closed" WindowStartupLocation="CenterScreen"
         >
     <Window.Resources>
         <SolidColorBrush x:Key="Menu.Static.Background" Color="#FF2D2D30"/>
@@ -407,7 +410,7 @@
                     </Grid.ColumnDefinitions>
                     <Rectangle Fill="#FF2D2D30" MouseDown="Rectangle_MouseDown"/>
                     <StackPanel Orientation="Horizontal">
-                        <Rectangle Width="38" Fill="{x:Static RS:Textures.Logo_w}"/>
+                        <Rectangle Width="38" Fill="{x:Static RS:Textures.Logo_w}" Name="RC_Icon"/>
                         <Menu Height="28" Background="#FF2D2D30" Foreground="White" shell:WindowChrome.IsHitTestVisibleInChrome="True" HorizontalAlignment="Center" VerticalAlignment="Center" HorizontalContentAlignment="Center">
                             <MenuItem Style="{DynamicResource MenuItemStyle1}" Width="64" Header="文件" Height="28" Padding="20,0,6,0">
                                 <MenuItem Header="新建" Click="BT_NewFile_Clicked"/>
@@ -453,7 +456,7 @@
                     <AGC:Button Margin="4,0,0,0" Width="32" Name="BT_Run" Icon="{x:Static RS:Textures.BT_Run}" Clicked="BT_Run_Clicked"/>
                     <AGC:Button Width="32" Name="BT_Pause" Icon="{x:Static RS:Textures.BT_Pause}" Clicked="BT_Pause_Clicked"/>
                     <AGC:Button Width="32" Name="BT_Stop" Icon="{x:Static RS:Textures.BT_Stop}" Clicked="BT_Stop_Clicked"/>
-                    <AGC:Button Width="32" Name="BT_Refresh" Icon="{x:Static RS:Textures.BT_Refresh}"/>
+                    <AGC:Button Width="32" Name="BT_Refresh" Icon="{x:Static RS:Textures.BT_Refresh}" Clicked="BT_Refresh_Clicked"/>
                 </StackPanel>
                 <Grid Name="WorkArea" Grid.Row="2">
                     <Grid.ColumnDefinitions>
@@ -486,21 +489,21 @@
                             </local:SubWindow>
                             <GridSplitter Background="#FF2D2D30" Width="5" Grid.Column="1" ResizeBehavior="PreviousAndNext" Focusable="False"/>
                             <local:SubWindow Title="舞台" Grid.Column="2" Margin="0,0,0,0">
-                                <local:SW_Stage Grid.Row="1"/>
+                                <local:SubWindow_Stage Grid.Row="1"/>
                             </local:SubWindow>
                             <GridSplitter Background="#FF2D2D30" Width="5" Grid.Column="3" ResizeBehavior="PreviousAndNext" Focusable="False"/>
                             <local:SubWindow Title="性能" Grid.Column="4">
-                                <local:SW_Performance Grid.Row="1" x:Name="SW_PF">
+                                <local:SubWindow_Performance Grid.Row="1" x:Name="SW_PF">
 
-                                </local:SW_Performance>
+                                </local:SubWindow_Performance>
                             </local:SubWindow>
                             <GridSplitter Background="#FF2D2D30" Width="5" Grid.Column="5" ResizeBehavior="PreviousAndNext" Focusable="False"/>
                             <local:SubWindow Title="行为" Grid.Column="6">
 
                             </local:SubWindow>
                         </Grid>
-                        <local:SubWindow Title="时间轴" Grid.Row="2" Margin="8,0,0,8">
-
+                        <local:SubWindow Title="时间轴" Grid.Row="2" Margin="8,0,0,8" ScrollViewer.VerticalScrollBarVisibility="Disabled">
+                            <local:SubWindow_TimeLine Grid.Row="1"/>
                         </local:SubWindow>
                     </Grid>
                     <GridSplitter Background="#FF2D2D30" Width="5" Grid.Column="1" ResizeBehavior="PreviousAndNext" Focusable="False"/>
@@ -518,7 +521,7 @@
                             Background="#FF2D2D30"
                             HorizontalAlignment="Stretch" Focusable="False"/>
                         <local:SubWindow Title="属性" Grid.Row="2" Margin="0,0,8,8">
-
+                            <local:SubWindow_Property Grid.Row="1"/>
                         </local:SubWindow>
                         
                             

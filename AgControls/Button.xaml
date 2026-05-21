@@ -10,7 +10,8 @@
              MouseUp="UserControl_MouseUp"
              MouseDown="UserControl_MouseDown"
              MouseEnter="UserControl_MouseEnter"
-             MouseLeave="UserControl_MouseLeave">
+             MouseLeave="UserControl_MouseLeave"
+             IsEnabledChanged="UserControl_IsEnabledChanged">
     <Grid>
         <Rectangle Name="RC_Icon" HorizontalAlignment="Center" VerticalAlignment="Center"/>
         <Label Name="LB_Text" Foreground="White" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>

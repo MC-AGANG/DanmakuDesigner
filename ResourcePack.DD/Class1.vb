@@ -21,6 +21,13 @@ Public Class Textures
     Public Shared BT_Pause As ImageBrush
     Public Shared BT_Stop As ImageBrush
     Public Shared BT_Refresh As ImageBrush
+
+    Public Shared BT_AddEnemy As ImageBrush
+    Public Shared BT_AddEnemies As ImageBrush
+    Public Shared BT_ClearEnemy As ImageBrush
+    Public Shared BT_AddBullet As ImageBrush
+    Public Shared BT_AddBullets As ImageBrush
+    Public Shared BT_ClearBullet As ImageBrush
     Public Shared Sub Load()
         Logo_w = New ImageBrush(B2I(MyResource.logo_w))
 
@@ -42,6 +49,13 @@ Public Class Textures
         BT_Pause = New ImageBrush(B2I(MyResource.pause))
         BT_Stop = New ImageBrush(B2I(MyResource._stop))
         BT_Refresh = New ImageBrush(B2I(MyResource.refresh))
+
+        BT_AddEnemy = New ImageBrush(B2I(MyResource.AddEnemy))
+        BT_AddEnemies = New ImageBrush(B2I(MyResource.AddEnemies))
+        BT_ClearEnemy = New ImageBrush(B2I(MyResource.ClearEnemy))
+        BT_AddBullet = New ImageBrush(B2I(MyResource.AddBullet))
+        BT_AddBullets = New ImageBrush(B2I(MyResource.AddBullets))
+        BT_ClearBullet = New ImageBrush(B2I(MyResource.ClearBullet))
     End Sub
     Public Shared Function B2I(byteArray As Byte()) As BitmapImage
         Using stream As Stream = New MemoryStream(byteArray)

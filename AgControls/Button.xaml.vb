@@ -1,9 +1,16 @@
 ﻿Public Class Button
     Public Property Icon As ImageBrush
         Set(value As ImageBrush)
+            If value.ImageSource.Width > Width OrElse value.ImageSource.Height > Height Then
+                RC_Icon.HorizontalAlignment = HorizontalAlignment.Stretch
+                RC_Icon.VerticalAlignment = VerticalAlignment.Stretch
+            Else
+                RC_Icon.HorizontalAlignment = HorizontalAlignment.Center
+                RC_Icon.VerticalAlignment = VerticalAlignment.Center
+                RC_Icon.Width = value.ImageSource.Width
+                RC_Icon.Height = value.ImageSource.Height
+            End If
             RC_Icon.Fill = value
-            RC_Icon.Width = value.ImageSource.Width
-            RC_Icon.Height = value.ImageSource.Height
         End Set
         Get
             Return RC_Icon.Fill
@@ -46,5 +53,15 @@
         Background = New SolidColorBrush(Color.FromArgb(1, 255, 255, 255))
         RC_Icon.Opacity = 1
         LB_Text.Opacity = 1
+    End Sub
+
+    Private Sub UserControl_IsEnabledChanged(sender As Object, e As DependencyPropertyChangedEventArgs)
+        If IsEnabled Then
+            RC_Icon.Opacity = 1
+            LB_Text.Opacity = 1
+        Else
+            RC_Icon.Opacity = 0.5
+            LB_Text.Opacity = 0.5
+        End If
     End Sub
 End Class

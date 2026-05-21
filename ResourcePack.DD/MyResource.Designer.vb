@@ -77,6 +77,66 @@ Namespace My.Resources
         '''<summary>
         '''  查找 System.Byte[] 类型的本地化资源。
         '''</summary>
+        Friend Shared ReadOnly Property AddBullet() As Byte()
+            Get
+                Dim obj As Object = ResourceManager.GetObject("AddBullet", resourceCulture)
+                Return CType(obj,Byte())
+            End Get
+        End Property
+        
+        '''<summary>
+        '''  查找 System.Byte[] 类型的本地化资源。
+        '''</summary>
+        Friend Shared ReadOnly Property AddBullets() As Byte()
+            Get
+                Dim obj As Object = ResourceManager.GetObject("AddBullets", resourceCulture)
+                Return CType(obj,Byte())
+            End Get
+        End Property
+        
+        '''<summary>
+        '''  查找 System.Byte[] 类型的本地化资源。
+        '''</summary>
+        Friend Shared ReadOnly Property AddEnemies() As Byte()
+            Get
+                Dim obj As Object = ResourceManager.GetObject("AddEnemies", resourceCulture)
+                Return CType(obj,Byte())
+            End Get
+        End Property
+        
+        '''<summary>
+        '''  查找 System.Byte[] 类型的本地化资源。
+        '''</summary>
+        Friend Shared ReadOnly Property AddEnemy() As Byte()
+            Get
+                Dim obj As Object = ResourceManager.GetObject("AddEnemy", resourceCulture)
+                Return CType(obj,Byte())
+            End Get
+        End Property
+        
+        '''<summary>
+        '''  查找 System.Byte[] 类型的本地化资源。
+        '''</summary>
+        Friend Shared ReadOnly Property ClearBullet() As Byte()
+            Get
+                Dim obj As Object = ResourceManager.GetObject("ClearBullet", resourceCulture)
+                Return CType(obj,Byte())
+            End Get
+        End Property
+        
+        '''<summary>
+        '''  查找 System.Byte[] 类型的本地化资源。
+        '''</summary>
+        Friend Shared ReadOnly Property ClearEnemy() As Byte()
+            Get
+                Dim obj As Object = ResourceManager.GetObject("ClearEnemy", resourceCulture)
+                Return CType(obj,Byte())
+            End Get
+        End Property
+        
+        '''<summary>
+        '''  查找 System.Byte[] 类型的本地化资源。
+        '''</summary>
         Friend Shared ReadOnly Property close() As Byte()
             Get
                 Dim obj As Object = ResourceManager.GetObject("close", resourceCulture)

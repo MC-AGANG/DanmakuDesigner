@@ -3,6 +3,7 @@ Imports AgSTG
 Imports AgSTG.Core
 Imports ResourcePack.DD
 Imports Windows.Win32.Storage
+Imports DanmakuDesigner.PublicArea
 Class MainWindow
     Public TM_Main As MediaTimer
     Private Maximized As Boolean = False
@@ -13,9 +14,11 @@ Class MainWindow
 
     End Sub
     Private Sub Window_Loaded(sender As Object, e As RoutedEventArgs)
+        MW = Me
         TM_Main = New MediaTimer(60)
         TM_Main.Act.Add(AddressOf STG_Update)
         TM_Main.Act.Add(AddressOf UpdatePerfromance)
+        TM_Main.Act.Add(AddressOf UpdateTimeLine)
         SetBorderColor(0)
         WorkArea.Visibility = Visibility.Hidden
     End Sub
@@ -150,6 +153,19 @@ Class MainWindow
         time += TM_Main.MSPT
         Ticks += 1
     End Sub
+    Private Sub UpdateTimeLine()
+        Dispatcher.Invoke(Sub()
+                              For Each e In Events
+                                  If e.Tick = SW_Timeline.Position Then
+                                      e.Run()
+                                  End If
+                              Next
+                              SW_Timeline.Position += 1
+                              If SW_Timeline.Position >= SW_Timeline.Length Then
+                                  BT_Stop_Clicked()
+                              End If
+                          End Sub)
+    End Sub
 
     Private Sub BT_Run_Clicked()
         SetBorderColor(2)
@@ -167,6 +183,7 @@ Class MainWindow
         SW_PF.CT_FPS.Clear()
         SW_PF.CT_MSPT.Clear()
         TM_Main.Stop()
+        SW_Timeline.Position = 0
     End Sub
 
     Private Sub BT_NewFile_Clicked()
@@ -177,5 +194,50 @@ Class MainWindow
     Private Sub BT_CloseFile_Clicked()
         SetBorderColor(0)
         WorkArea.Visibility = Visibility.Hidden
+    End Sub
+
+    Private Sub Window_Activated(sender As Object, e As EventArgs)
+        Dim c As SolidColorBrush = BottomBar.Background
+        For i = 0 To 1
+            Border11.GradientStops.Item(i).Color = Color.FromArgb(i * 64, c.Color.R, c.Color.G, c.Color.B)
+            Border12.GradientStops.Item(i).Color = Color.FromArgb(i * 64, c.Color.R, c.Color.G, c.Color.B)
+            Border13.GradientStops.Item(i).Color = Color.FromArgb(i * 64, c.Color.R, c.Color.G, c.Color.B)
+            Border21.GradientStops.Item(i).Color = Color.FromArgb(i * 64, c.Color.R, c.Color.G, c.Color.B)
+            Border23.GradientStops.Item(i).Color = Color.FromArgb(i * 64, c.Color.R, c.Color.G, c.Color.B)
+            Border31.GradientStops.Item(i).Color = Color.FromArgb(i * 64, c.Color.R, c.Color.G, c.Color.B)
+            Border32.GradientStops.Item(i).Color = Color.FromArgb(i * 64, c.Color.R, c.Color.G, c.Color.B)
+            Border33.GradientStops.Item(i).Color = Color.FromArgb(i * 64, c.Color.R, c.Color.G, c.Color.B)
+        Next
+        borderall.Stroke = c
+        RC_Icon.Opacity = 1
+        BT_Close.Opacity = 1
+        BT_Maximize.Opacity = 1
+        BT_Minimize.Opacity = 1
+    End Sub
+
+    Private Sub Window_Deactivated(sender As Object, e As EventArgs)
+        For i = 0 To 1
+            Border11.GradientStops.Item(i).Color = Color.FromArgb(i * 64, 67, 67, 70)
+            Border12.GradientStops.Item(i).Color = Color.FromArgb(i * 64, 67, 67, 70)
+            Border13.GradientStops.Item(i).Color = Color.FromArgb(i * 64, 67, 67, 70)
+            Border21.GradientStops.Item(i).Color = Color.FromArgb(i * 64, 67, 67, 70)
+            Border23.GradientStops.Item(i).Color = Color.FromArgb(i * 64, 67, 67, 70)
+            Border31.GradientStops.Item(i).Color = Color.FromArgb(i * 64, 67, 67, 70)
+            Border32.GradientStops.Item(i).Color = Color.FromArgb(i * 64, 67, 67, 70)
+            Border33.GradientStops.Item(i).Color = Color.FromArgb(i * 64, 67, 67, 70)
+        Next
+        borderall.Stroke = New SolidColorBrush(Color.FromArgb(255, 67, 67, 70))
+        RC_Icon.Opacity = 0.5
+        BT_Close.Opacity = 0.5
+        BT_Maximize.Opacity = 0.5
+        BT_Minimize.Opacity = 0.5
+    End Sub
+
+    Private Sub BT_Refresh_Clicked()
+        SW_Timeline.Length = 1000
+    End Sub
+
+    Private Sub Window_Closed(sender As Object, e As EventArgs)
+        Application.Current.Shutdown()
     End Sub
 End Class

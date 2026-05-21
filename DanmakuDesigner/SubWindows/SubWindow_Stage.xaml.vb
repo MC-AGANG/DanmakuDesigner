@@ -1,5 +1,6 @@
-﻿Imports AgSTG
-Public Class SW_Stage
+﻿Imports DanmakuDesigner.PublicArea
+Imports AgSTG
+Public Class SubWindow_Stage
     Public Shared STG As New STG
     Private Sub UserControl_SizeChanged(sender As Object, e As SizeChangedEventArgs)
         If ActualHeight / 7 > ActualWidth / 6 Then
@@ -12,6 +13,7 @@ Public Class SW_Stage
     End Sub
 
     Private Sub UserControl_Loaded(sender As Object, e As RoutedEventArgs)
+        SW_Stage = Me
         GD_Main.Children.Add(STG)
         STG.Height = 448
         STG.Width = 384

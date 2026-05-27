@@ -7,10 +7,20 @@ Public Class SubWindow_Property
     Public Sub Load(Target As EnemyAddEvent)
         PB_Enemy.Load(Target)
     End Sub
-
+    Public Sub Load(Target As EnemyGroupEvent)
+        PB_EnemyGroup.Load(Target)
+    End Sub
+    Public Sub Load(Target As EnemyClearEvent)
+        PB_EnemyClear.Load(Target)
+    End Sub
     Private Sub ScrollViewer_KeyDown(sender As Object, e As KeyEventArgs)
         If e.Key = Key.Up OrElse e.Key = Key.Left OrElse e.Key = Key.Right OrElse e.Key = Key.Down Then
             e.Handled = True
         End If
+    End Sub
+    Public Sub UpdateData()
+        PB_Enemy.UpdateData()
+        PB_EnemyGroup.UpdateData()
+        PB_EnemyClear.UpdateData()
     End Sub
 End Class

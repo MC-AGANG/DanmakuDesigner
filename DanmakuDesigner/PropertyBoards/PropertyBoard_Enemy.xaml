@@ -13,6 +13,8 @@
             <ColumnDefinition Width="1*" MinWidth="16"/>
             <ColumnDefinition Width="Auto"/>
             <ColumnDefinition Width="1*" MinWidth="16"/>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="1*" MinWidth="16"/>
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
             <RowDefinition/>
@@ -29,7 +31,8 @@
             <RowDefinition/>
             <RowDefinition/>
         </Grid.RowDefinitions>
-        <GridSplitter Background="#FF2D2D30" Width="5" Grid.Column="1" ResizeBehavior="PreviousAndNext" Focusable="False"/>
+        <GridSplitter Background="#FF2D2D30" Width="4" Grid.Column="1" ResizeBehavior="PreviousAndNext" Focusable="False"/>
+        <GridSplitter Background="#FF2D2D30" Width="4" Grid.Column="3" ResizeBehavior="PreviousAndNext" Focusable="False"/>
         <Label Content="项目" Grid.Row="0" Foreground="White"/>
         <Label Content="出现时间" Grid.Row="1" Foreground="White"/>
         <Label Content="外观" Grid.Row="2" Foreground="White"/>
@@ -45,17 +48,23 @@
         <Label Content="标签" Grid.Row="12" Foreground="White"/>
 
         <Label Content="数值" Grid.Row="0" Grid.Column="2" Foreground="White"/>
-        <TextBox Name="TB_Tick" Grid.Row="1" Grid.Column="2" Foreground="White" Background="#FF1F1F1F" BorderBrush="#FF424242" SelectionBrush="#FF353535" TextChanged="TB_Tick_TextChanged"/>
+        <TextBox Name="TB_Tick" Grid.Row="1" Grid.Column="2" LostKeyboardFocus="TB_Tick_LostKeyboardFocus"/>
         <ComboBox Name="CB_EnemyType" Grid.Row="2" Grid.Column="2" SelectionChanged="CB_EnemyType_SelectionChanged"/>
         <ComboBox Name="CB_EnemyColor" Grid.Row="3" Grid.Column="2" SelectionChanged="CB_EnemyColor_SelectionChanged"/>
-        <TextBox Name="TB_X" Grid.Row="4" Grid.Column="2" Foreground="White" Background="#FF1F1F1F" BorderBrush="#FF424242" SelectionBrush="#FF353535" TextChanged="TB_X_TextChanged"/>
-        <TextBox Name="TB_Y" Grid.Row="5" Grid.Column="2" Foreground="White" Background="#FF1F1F1F" BorderBrush="#FF424242" SelectionBrush="#FF353535" TextChanged="TB_Y_TextChanged"/>
-        <TextBox Name="TB_HP" Grid.Row="6" Grid.Column="2" Foreground="White" Background="#FF1F1F1F" BorderBrush="#FF424242" SelectionBrush="#FF353535" TextChanged="TB_HP_TextChanged"/>
+        <TextBox Name="TB_X" Grid.Row="4" Grid.Column="2" LostKeyboardFocus="TB_X_LostKeyboardFocus"/>
+        <TextBox Name="TB_Y" Grid.Row="5" Grid.Column="2" LostKeyboardFocus="TB_Y_LostKeyboardFocus"/>
+        <TextBox Name="TB_HP" Grid.Row="6" Grid.Column="2" LostKeyboardFocus="TB_HP_LostKeyboardFocus"/>
         <AGC:Button Name="BT_Item" Grid.Row="7" Grid.Column="2" Text="编辑..." Width="64" HorizontalAlignment="Left" Clicked="BT_Item_Clicked"/>
-        <TextBox Name="TB_Life" Grid.Row="8" Grid.Column="2" Foreground="White" Background="#FF1F1F1F" BorderBrush="#FF424242" SelectionBrush="#FF353535" TextChanged="TB_Life_TextChanged"/>
-        <TextBox Name="TB_Speed" Grid.Row="9" Grid.Column="2" Foreground="White" Background="#FF1F1F1F" BorderBrush="#FF424242" SelectionBrush="#FF353535" TextChanged="TB_Speed_TextChanged"/>
-        <TextBox Name="TB_Direction" Grid.Row="10" Grid.Column="2" Foreground="White" Background="#FF1F1F1F" BorderBrush="#FF424242" SelectionBrush="#FF353535" TextChanged="TB_Direction_TextChanged"/>
-        <TextBox Name="TB_Defence" Grid.Row="11" Grid.Column="2" Foreground="White" Background="#FF1F1F1F" BorderBrush="#FF424242" SelectionBrush="#FF353535" TextChanged="TB_Defence_TextChanged"/>
-        <TextBox Name="TB_Tag" Grid.Row="12" Grid.Column="2" Foreground="White" Background="#FF1F1F1F" BorderBrush="#FF424242" SelectionBrush="#FF353535" TextChanged="TB_Tag_TextChanged"/>
+        <TextBox Name="TB_Life" Grid.Row="8" Grid.Column="2" LostKeyboardFocus="TB_Life_LostKeyboardFocus"/>
+        <TextBox Name="TB_Speed" Grid.Row="9" Grid.Column="2" LostKeyboardFocus="TB_Speed_LostKeyboardFocus"/>
+        <TextBox Name="TB_Direction" Grid.Row="10" Grid.Column="2" LostKeyboardFocus="TB_Direction_LostKeyboardFocus"/>
+        <TextBox Name="TB_Defence" Grid.Row="11" Grid.Column="2" LostKeyboardFocus="TB_Defence_LostKeyboardFocus"/>
+        <TextBox Name="TB_Tag" Grid.Row="12" Grid.Column="2" LostKeyboardFocus="TB_Tag_LostKeyboardFocus"/>
+
+        <Label Content="随机量" Grid.Row="0" Grid.Column="4" Foreground="White"/>
+        <TextBox Name="TB_X_Rand" Grid.Row="4" Grid.Column="4" LostKeyboardFocus="TB_X_Rand_LostKeyboardFocus"/>
+        <TextBox Name="TB_Y_Rand" Grid.Row="5" Grid.Column="4" LostKeyboardFocus="TB_Y_Rand_LostKeyboardFocus"/>
+        <TextBox Name="TB_Speed_Rand" Grid.Row="9" Grid.Column="4" LostKeyboardFocus="TB_Speed_Rand_LostKeyboardFocus"/>
+        <TextBox Name="TB_Direction_Rand" Grid.Row="10" Grid.Column="4" LostKeyboardFocus="TB_Direction_Rand_LostKeyboardFocus"/>
     </Grid>
 </UserControl>

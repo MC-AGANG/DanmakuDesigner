@@ -142,6 +142,9 @@
   <data name="closefile" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>Resources\closefile.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
+  <data name="DeleteObject" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\DeleteObject.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
   <data name="logo_w" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>Resources\logo_w.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>

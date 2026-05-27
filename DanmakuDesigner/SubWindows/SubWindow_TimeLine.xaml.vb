@@ -69,8 +69,7 @@ Public Class SubWindow_TimeLine
 
     Private Sub BT_AddEnemy_Clicked()
         Dim e As New EnemyAddEvent With {.Tick = Position}
-        Events.Add(e)
-        CV_Main.Children.Add(e)
+        UndoMgr.Execute(New EventAddCommand(e))
     End Sub
 
     Private Sub SV_Main_PreviewKeyDown(sender As Object, e As KeyEventArgs)
@@ -90,4 +89,26 @@ Public Class SubWindow_TimeLine
             e.Handled = True
         End If
     End Sub
+
+    Private Sub BT_AddEnemies_Clicked()
+        Dim e As New EnemyGroupEvent With {.Tick = Position}
+        UndoMgr.Execute(New EventAddCommand(e))
+    End Sub
+
+    Private Sub BT_ClearEnemy_Clicked()
+        Dim e As New EnemyClearEvent With {.Tick = Position}
+        UndoMgr.Execute(New EventAddCommand(e))
+    End Sub
+
+    Private Sub BT_DeleteObject_Clicked()
+        Dim del As New List(Of EventPoint)
+        For Each e In Events
+            If e.Selected Then
+                del.Add(e)
+            End If
+        Next
+        UndoMgr.Execute(New EventDeleteCommand(del))
+        SW_Property.UpdateData()
+    End Sub
+
 End Class

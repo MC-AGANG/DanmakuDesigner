@@ -295,7 +295,11 @@
     </UserControl.Resources>
     <Grid>
         <ScrollViewer Style="{DynamicResource ScrollViewerStyle1}" KeyDown="ScrollViewer_KeyDown">
-            <local:PropertyBoard_Enemy VerticalAlignment="Top" Visibility="Hidden" x:Name="PB_Enemy"/>
+            <Grid VerticalAlignment="Top">
+                <local:PropertyBoard_Enemy VerticalAlignment="Top" Visibility="Hidden" x:Name="PB_Enemy"/>
+                <local:PropertyBoard_EnemyGroup VerticalAlignment="Top" Visibility="Hidden" x:Name="PB_EnemyGroup"/>
+                <local:PropertyBoard_EnemyClear VerticalAlignment="Top" Visibility="Hidden" x:Name="PB_EnemyClear"/>
+            </Grid>
         </ScrollViewer>
     </Grid>
 </UserControl>

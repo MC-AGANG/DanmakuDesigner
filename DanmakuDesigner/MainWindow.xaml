@@ -16,6 +16,7 @@
         Activated="Window_Activated"
         Deactivated="Window_Deactivated"
         Closed="Window_Closed" WindowStartupLocation="CenterScreen"
+        PreviewMouseDown="Window_PreviewMouseDown"
         >
     <Window.Resources>
         <SolidColorBrush x:Key="Menu.Static.Background" Color="#FF2D2D30"/>
@@ -450,8 +451,8 @@
                     <AGC:Button Width="32" Name="BT_SaveAs" Icon="{x:Static RS:Textures.BT_SaveAs}"/>
                     <AGC:Button Margin="0,0,4,0" Width="32" Name="BT_CloseFile" Icon="{x:Static RS:Textures.BT_CloseFile}" Clicked="BT_CloseFile_Clicked"/>
                     <Rectangle Width="1" Height="32" Fill="DarkGray"/>
-                    <AGC:Button Margin="4,0,0,0" Width="32" Name="BT_Undo" Icon="{x:Static RS:Textures.BT_Undo}"/>
-                    <AGC:Button Margin="0,0,4,0" Width="32" Name="BT_Redo" Icon="{x:Static RS:Textures.BT_Redo}"/>
+                    <AGC:Button Margin="4,0,0,0" Width="32" Name="BT_Undo" Icon="{x:Static RS:Textures.BT_Undo}" Clicked="BT_Undo_Clicked"/>
+                    <AGC:Button Margin="0,0,4,0" Width="32" Name="BT_Redo" Icon="{x:Static RS:Textures.BT_Redo}" Clicked="BT_Redo_Clicked"/>
                     <Rectangle Width="1" Height="32" Fill="DarkGray"/>
                     <AGC:Button Margin="4,0,0,0" Width="32" Name="BT_Run" Icon="{x:Static RS:Textures.BT_Run}" Clicked="BT_Run_Clicked"/>
                     <AGC:Button Width="32" Name="BT_Pause" Icon="{x:Static RS:Textures.BT_Pause}" Clicked="BT_Pause_Clicked"/>

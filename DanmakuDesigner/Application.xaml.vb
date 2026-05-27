@@ -19,6 +19,10 @@ Class Application
         Sounds.Load()
         DD.Textures.Load()
     End Function
+
+    Private Sub TextBox_GotKeyboardFocus(sender As Object, e As KeyboardFocusChangedEventArgs)
+        PublicArea.FocusedTextBox = CType(sender, TextBox)
+    End Sub
 End Class
 Public NotInheritable Class FullScreenManager
     Private Sub New()

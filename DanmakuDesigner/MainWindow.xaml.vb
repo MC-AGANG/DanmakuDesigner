@@ -240,4 +240,26 @@ Class MainWindow
     Private Sub Window_Closed(sender As Object, e As EventArgs)
         Application.Current.Shutdown()
     End Sub
+
+    Private Sub Window_PreviewMouseDown(sender As Object, e As MouseButtonEventArgs)
+        If FocusedTextBox IsNot Nothing Then
+            Dim dep = TryCast(e.OriginalSource, DependencyObject)
+            If dep Is Nothing Then Return
+            If IsChildOf(dep, FocusedTextBox) Then
+                Return
+            End If
+            Keyboard.ClearFocus()
+            FocusedTextBox = Nothing
+        End If
+    End Sub
+
+    Private Sub BT_Undo_Clicked()
+        UndoMgr.Undo()
+        SW_Property.UpdateData()
+    End Sub
+
+    Private Sub BT_Redo_Clicked()
+        UndoMgr.Redo()
+        SW_Property.UpdateData()
+    End Sub
 End Class

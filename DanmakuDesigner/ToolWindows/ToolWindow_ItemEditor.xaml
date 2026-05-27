@@ -6,7 +6,8 @@
         xmlns:local="clr-namespace:DanmakuDesigner"
         xmlns:AGC="clr-namespace:AgControls;assembly=AgControls"
         mc:Ignorable="d"
-        Title="掉落物编辑器" Height="280" Width="240" WindowStyle="None" ResizeMode="NoResize" Background="#FF1E1E1E" WindowStartupLocation="CenterScreen">
+        Title="掉落物编辑器" Height="280" Width="240" WindowStyle="ToolWindow" ResizeMode="NoResize" Background="#FF1E1E1E" WindowStartupLocation="CenterScreen"
+        Loaded="Window_Loaded">
     <Grid Margin="8,8,8,8">
         <Grid.RowDefinitions>
             <RowDefinition Height="24"/>
@@ -33,12 +34,12 @@
         <Label Content="符卡碎片" Grid.Row="6" Foreground="White"/>
 
         <Label Content="数量" Grid.Row="0" Grid.Column="1" Foreground="White"/>
-        <TextBox Name="TB_Power" Grid.Row="1" Grid.Column="1" Foreground="White" Background="#FF1F1F1F" BorderBrush="#FF424242" SelectionBrush="#FF353535"/>
-        <TextBox Name="TB_Point" Grid.Row="2" Grid.Column="1" Foreground="White" Background="#FF1F1F1F" BorderBrush="#FF424242" SelectionBrush="#FF353535"/>
-        <TextBox Name="TB_Life" Grid.Row="3" Grid.Column="1" Foreground="White" Background="#FF1F1F1F" BorderBrush="#FF424242" SelectionBrush="#FF353535"/>
-        <TextBox Name="TB_LifePiece" Grid.Row="4" Grid.Column="1" Foreground="White" Background="#FF1F1F1F" BorderBrush="#FF424242" SelectionBrush="#FF353535"/>
-        <TextBox Name="TB_Spell" Grid.Row="5" Grid.Column="1" Foreground="White" Background="#FF1F1F1F" BorderBrush="#FF424242" SelectionBrush="#FF353535"/>
-        <TextBox Name="TB_SpellPiece" Grid.Row="6" Grid.Column="1" Foreground="White" Background="#FF1F1F1F" BorderBrush="#FF424242" SelectionBrush="#FF353535"/>
+        <TextBox Name="TB_Power" Grid.Row="1" Grid.Column="1" Foreground="White"/>
+        <TextBox Name="TB_Point" Grid.Row="2" Grid.Column="1" Foreground="White"/>
+        <TextBox Name="TB_Life" Grid.Row="3" Grid.Column="1" Foreground="White"/>
+        <TextBox Name="TB_LifePiece" Grid.Row="4" Grid.Column="1" Foreground="White"/>
+        <TextBox Name="TB_Spell" Grid.Row="5" Grid.Column="1" Foreground="White"/>
+        <TextBox Name="TB_SpellPiece" Grid.Row="6" Grid.Column="1" Foreground="White"/>
 
         <Button Name="BT_Apply" Grid.Column="0" Grid.Row="8" Margin="8" Content="确定" Click="BT_Apply_Click"/>
         <Button Name="BT_Cancel" Grid.Column="1" Grid.Row="8" Margin="8" Content="取消" Click="BT_Cancel_Click"/>

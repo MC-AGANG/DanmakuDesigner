@@ -28,6 +28,7 @@ Public Class Textures
     Public Shared BT_AddBullet As ImageBrush
     Public Shared BT_AddBullets As ImageBrush
     Public Shared BT_ClearBullet As ImageBrush
+    Public Shared BT_DeleteObject As ImageBrush
     Public Shared Sub Load()
         Logo_w = New ImageBrush(B2I(MyResource.logo_w))
 
@@ -56,6 +57,7 @@ Public Class Textures
         BT_AddBullet = New ImageBrush(B2I(MyResource.AddBullet))
         BT_AddBullets = New ImageBrush(B2I(MyResource.AddBullets))
         BT_ClearBullet = New ImageBrush(B2I(MyResource.ClearBullet))
+        BT_DeleteObject = New ImageBrush(B2I(MyResource.DeleteObject))
     End Sub
     Public Shared Function B2I(byteArray As Byte()) As BitmapImage
         Using stream As Stream = New MemoryStream(byteArray)

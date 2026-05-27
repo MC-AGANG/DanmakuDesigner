@@ -44,6 +44,8 @@ Public MustInherit Class EventPoint
         UpdateIcon()
         UpdatePosition()
         Selected = True
+        Height = 16
+        Width = 16
     End Sub
     Public Enum EventType As Byte
         Enemy = 0
@@ -82,13 +84,36 @@ Public MustInherit Class EventPoint
 End Class
 Public Class EnemyAddEvent
     Inherits EventPoint
-    Public Target As Enemy
+    Public Property EnemyType As Byte = 0
+    Public Property EnemyColor As Byte = 0
+    Public Property X As Double = 192
+    Public Property Y As Double = 224
+    Public Property HP As Double = 10
+    Public Property Items As String = ""
+    Public Property Life As Integer = 256
+    Public Property Speed As Double = 0
+    Public Property Direction As Double = 180
+    Public Property Defence As Double = 0
+    Public Property Random_X As Double = 0
+    Public Property Random_Y As Double = 0
+    Public Property Random_Speed As Double = 0
+    Public Property Random_Direction As Double = 0
     Public Sub New()
         _Type = 0
-        Target = New Enemy(0, 0, 192, 224, 10, "", 200)
     End Sub
     Public Overrides Sub Run()
-        STG.Add(New Enemy(Target.EnemyType, Target.Color, Target.X, Target.Y, Target.HP, Target.DropItems, Target.Life, Target.Speed, Target.Direction, Target.Defence))
+        STG.Add(New Enemy(EnemyType,
+                          EnemyColor,
+                          X + Random_X * 2 * Rnd() - Random_X,
+                          Y + Random_Y * 2 * Rnd() - Random_Y,
+                          HP,
+                          Items,
+                          Life,
+                          Speed + Random_Speed * 2 * Rnd() - Random_Speed,
+                          Direction + Random_Direction * 2 * Rnd() - Random_Direction,
+                          Defence) With {
+                          .Tag = Tag
+         })
     End Sub
     Public Overrides Sub UpdateIcon()
         LB_Main.Foreground = Brushes.Lime
@@ -96,12 +121,26 @@ Public Class EnemyAddEvent
     End Sub
     Public Overrides Sub ShowProperty()
         SW_Property.Load(Me)
+        SW_Property.PB_EnemyGroup.Visibility = Visibility.Hidden
+        SW_Property.PB_EnemyClear.Visibility = Visibility.Hidden
     End Sub
 End Class
 Public Class EnemyGroupEvent
     Inherits EventPoint
-    Public Target_From As Enemy
-    Public Target_To As Enemy
+    Public Property EnemyType As Byte = 0
+    Public Property EnemyColor As Byte = 0
+    Public Property X As Double = 192
+    Public Property Y As Double = 224
+    Public Property HP As Double = 10
+    Public Property Items As String = ""
+    Public Property Life As Integer = 256
+    Public Property Speed As Double = 0
+    Public Property Direction As Double = 180
+    Public Property Defence As Double = 0
+    Public Property X_End As Double = 192
+    Public Property Y_End As Double = 224
+    Public Property Speed_End As Double = 0
+    Public Property Direction_End As Double = 180
     Public Property Count As UInteger
         Set(value As UInteger)
             _Count = value
@@ -111,11 +150,9 @@ Public Class EnemyGroupEvent
             Return _Count
         End Get
     End Property
-    Private _Count As UInteger
+    Private _Count As UInteger = 1
     Public Sub New()
         Type = EventType.EnemyGroup
-        Target_From = New Enemy(0, 0, 0, 0, 10, "", 64)
-        Target_To = New Enemy(0, 0, 0, 0, 10, "", 64)
     End Sub
     Public Overrides Sub Run()
         For i As UInteger = 1 To Count
@@ -123,16 +160,18 @@ Public Class EnemyGroupEvent
         Next
     End Sub
     Private Function GetInterpolation(i As UInteger) As Enemy
-        Dim e As New Enemy(Target_From.EnemyType,
-                           Target_From.Color,
-                           Target_From.X + (Target_To.X - Target_From.X) / Count * (i - 1),
-                           Target_From.Y + (Target_To.Y - Target_From.Y) / Count * (i - 1),
-                           Target_From.HP,
-                           Target_From.DropItems,
-                           Target_From.Life,
-                           Target_From.Speed + (Target_To.Speed - Target_From.Speed) / Count * (i - 1),
-                           Target_From.Direction + (Target_To.Direction - Target_From.Direction) / Count * (i - 1),
-                           Target_From.Defence)
+        Dim e As New Enemy(EnemyType,
+                           EnemyColor,
+                           X + (X_End - X) / Count * (i - 1),
+                           Y + (Y_End - Y) / Count * (i - 1),
+                           HP,
+                           Items,
+                           Life,
+                           Speed + (Speed_End - Speed) / Count * (i - 1),
+                           Direction + (Direction_End - Direction) / Count * (i - 1),
+                           Defence) With {
+                           .Tag = Tag
+        }
         Return e
     End Function
     Public Overrides Sub UpdateIcon()
@@ -140,18 +179,29 @@ Public Class EnemyGroupEvent
         LB_Main.Content = CStr(Count)
     End Sub
     Public Overrides Sub ShowProperty()
-
+        SW_Property.Load(Me)
+        SW_Property.PB_Enemy.Visibility = Visibility.Hidden
+        SW_Property.PB_EnemyClear.Visibility = Visibility.Hidden
     End Sub
 End Class
 Public Class EnemyClearEvent
     Inherits EventPoint
+    Public Property UseTag As Boolean = False
     Public Sub New()
         Type = EventType.ClearEnemy
     End Sub
     Public Overrides Sub Run()
-        For Each e In STG.SearchEnemy
-            e.Life = 1
-        Next
+        If UseTag Then
+            For Each e In STG.SearchEnemy
+                If Tag.Equals(e.Tag) Then
+                    e.Life = 1
+                End If
+            Next
+        Else
+            For Each e In STG.SearchEnemy
+                e.Life = 1
+            Next
+        End If
     End Sub
 
     Public Overrides Sub UpdateIcon()
@@ -159,7 +209,9 @@ Public Class EnemyClearEvent
         LB_Main.Content = "▲"
     End Sub
     Public Overrides Sub ShowProperty()
-
+        SW_Property.Load(Me)
+        SW_Property.PB_Enemy.Visibility = Visibility.Hidden
+        SW_Property.PB_EnemyGroup.Visibility = Visibility.Hidden
     End Sub
 End Class
 Public Class BulletAddEvent
@@ -197,7 +249,7 @@ End Class
 Public Class BulletGroupEvent
     Inherits EventPoint
     Public Target_From As Bullet
-    Public Target_To As Bullet
+    Public Target_End As Bullet
     Public Property BulletType As BulletType
         Set(value As BulletType)
             _BulletType = value
@@ -220,7 +272,7 @@ Public Class BulletGroupEvent
     Public Sub New()
         Type = EventType.Bullet
         Target_From = New Bullet(0, 0, 0, 0, 0)
-        Target_To = New Bullet(0, 0, 0, 0, 0)
+        Target_End = New Bullet(0, 0, 0, 0, 0)
     End Sub
     Public Overrides Sub Run()
         For i As UInteger = 1 To Count
@@ -232,18 +284,18 @@ Public Class BulletGroupEvent
         If BulletType = BulletType.Default Then
             e = New Bullet(Target_From.BulletType,
                                 Target_From.BulletColor,
-                                Target_From.X + (Target_To.X - Target_From.X) / Count * (i - 1),
-                                Target_From.Y + (Target_To.Y - Target_From.Y) / Count * (i - 1),
-                                Target_From.Speed + (Target_To.Speed - Target_From.Speed) / Count * (i - 1),
-                                Target_From.Direction + (Target_To.Direction - Target_From.Direction) / Count * (i - 1),
+                                Target_From.X + (Target_End.X - Target_From.X) / Count * (i - 1),
+                                Target_From.Y + (Target_End.Y - Target_From.Y) / Count * (i - 1),
+                                Target_From.Speed + (Target_End.Speed - Target_From.Speed) / Count * (i - 1),
+                                Target_From.Direction + (Target_End.Direction - Target_From.Direction) / Count * (i - 1),
                                 0)
         Else
             e = New Bullet(Target_From.BulletType,
                                 Target_From.BulletColor,
-                                Target_From.X + (Target_To.X - Target_From.X) / Count * (i - 1),
-                                Target_From.Y + (Target_To.Y - Target_From.Y) / Count * (i - 1),
-                                Target_From.Speed + (Target_To.Speed - Target_From.Speed) / Count * (i - 1),
-                                Target_From.Direction + (Target_To.Direction - Target_From.Direction) / Count * (i - 1))
+                                Target_From.X + (Target_End.X - Target_From.X) / Count * (i - 1),
+                                Target_From.Y + (Target_End.Y - Target_From.Y) / Count * (i - 1),
+                                Target_From.Speed + (Target_End.Speed - Target_From.Speed) / Count * (i - 1),
+                                Target_From.Direction + (Target_End.Direction - Target_From.Direction) / Count * (i - 1))
         End If
         Return e
     End Function

@@ -17,13 +17,13 @@
         <Grid.RowDefinitions>
             <RowDefinition/>
             <RowDefinition/>
-            <RowDefinition/>
+            <RowDefinition Height="24"/>
         </Grid.RowDefinitions>
         <GridSplitter Background="#FF2D2D30" Width="4" Grid.Column="1" ResizeBehavior="PreviousAndNext" Focusable="False"/>
         <GridSplitter Background="#FF2D2D30" Width="4" Grid.Column="3" ResizeBehavior="PreviousAndNext" Focusable="False"/>
         <Label Content="项目" Grid.Row="0" Foreground="White"/>
         <Label Content="执行时间" Grid.Row="1" Foreground="White"/>
-        <CheckBox Name="CB_Tag" Content="匹配Tag" Grid.Row="2" Foreground="White" Checked="CB_Tag_Checked" Unchecked="CB_Tag_Unchecked" Margin="0,4,0,0"/>
+        <CheckBox Name="CB_Tag" Content="匹配Tag" Grid.Row="2" Foreground="White" Checked="CB_Tag_Checked" Unchecked="CB_Tag_Unchecked" VerticalAlignment="Center"/>
 
         <Label Content="数值" Grid.Row="0" Grid.Column="2" Foreground="White"/>
         <TextBox Name="TB_Tick" Grid.Row="1" Grid.Column="2" LostKeyboardFocus="TB_Tick_LostKeyboardFocus"/>

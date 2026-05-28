@@ -12,6 +12,7 @@ Public Class UndoManager
             UndoStack.Push(cmd)
             RedoStack.Clear()
         End If
+        UpdateButton()
     End Sub
 
     Public Sub Undo()
@@ -19,6 +20,7 @@ Public Class UndoManager
         Dim cmd = UndoStack.Pop()
         cmd.Undo()
         RedoStack.Push(cmd)
+        UpdateButton()
     End Sub
 
     Public Sub Redo()
@@ -26,6 +28,19 @@ Public Class UndoManager
         Dim cmd = RedoStack.Pop()
         cmd.Execute()
         UndoStack.Push(cmd)
+        UpdateButton()
+    End Sub
+    Public Sub UpdateButton()
+        If UndoStack.Count > 0 Then
+            MW.BT_Undo.IsEnabled = True
+        Else
+            MW.BT_Undo.IsEnabled = False
+        End If
+        If RedoStack.Count > 0 Then
+            MW.BT_Redo.IsEnabled = True
+        Else
+            MW.BT_Redo.IsEnabled = False
+        End If
     End Sub
 End Class
 Public Class PropertyChangeCommand(Of T)

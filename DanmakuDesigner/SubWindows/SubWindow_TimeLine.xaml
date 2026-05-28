@@ -312,9 +312,9 @@
                 <AGC:Button Height="32" Width="32" Name="BT_AddEnemy" Icon="{x:Static RS:Textures.BT_AddEnemy}" Clicked="BT_AddEnemy_Clicked"/>
                 <AGC:Button Height="32" Width="32" Name="BT_AddEnemies" Icon="{x:Static RS:Textures.BT_AddEnemies}" Clicked="BT_AddEnemies_Clicked"/>
                 <AGC:Button Height="32" Width="32" Name="BT_ClearEnemy" Icon="{x:Static RS:Textures.BT_ClearEnemy}" Clicked="BT_ClearEnemy_Clicked"/>
-                <AGC:Button Height="32" Width="32" Name="BT_AddBullet" Icon="{x:Static RS:Textures.BT_AddBullet}"/>
-                <AGC:Button Height="32" Width="32" Name="BT_AddBullets" Icon="{x:Static RS:Textures.BT_AddBullets}"/>
-                <AGC:Button Height="32" Width="32" Name="BT_ClearBullet" Icon="{x:Static RS:Textures.BT_ClearBullet}"/>
+                <AGC:Button Height="32" Width="32" Name="BT_AddBullet" Icon="{x:Static RS:Textures.BT_AddBullet}" Clicked="BT_AddBullet_Clicked"/>
+                <AGC:Button Height="32" Width="32" Name="BT_AddBullets" Icon="{x:Static RS:Textures.BT_AddBullets}" Clicked="BT_AddBullets_Clicked"/>
+                <AGC:Button Height="32" Width="32" Name="BT_ClearBullet" Icon="{x:Static RS:Textures.BT_ClearBullet}" Clicked="BT_ClearBullet_Clicked"/>
                 <AGC:Button Height="32" Width="32" Name="BT_DeleteObject" Icon="{x:Static RS:Textures.BT_DeleteObject}" Clicked="BT_DeleteObject_Clicked"/>
             </WrapPanel>
         </ScrollViewer>

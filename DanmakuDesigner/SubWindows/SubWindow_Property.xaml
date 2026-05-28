@@ -295,10 +295,13 @@
     </UserControl.Resources>
     <Grid>
         <ScrollViewer Style="{DynamicResource ScrollViewerStyle1}" KeyDown="ScrollViewer_KeyDown">
-            <Grid VerticalAlignment="Top">
+            <Grid VerticalAlignment="Top" Name="GD_Main">
                 <local:PropertyBoard_Enemy VerticalAlignment="Top" Visibility="Hidden" x:Name="PB_Enemy"/>
                 <local:PropertyBoard_EnemyGroup VerticalAlignment="Top" Visibility="Hidden" x:Name="PB_EnemyGroup"/>
                 <local:PropertyBoard_EnemyClear VerticalAlignment="Top" Visibility="Hidden" x:Name="PB_EnemyClear"/>
+                <local:PropertyBoard_Bullet VerticalAlignment="Top" Visibility="Hidden" x:Name="PB_Bullet"/>
+                <local:PropertyBoard_BulletGroup VerticalAlignment="Top" Visibility="Hidden" x:Name="PB_BulletGroup"/>
+                <local:PropertyBoard_BulletClear VerticalAlignment="Top" Visibility="Hidden" x:Name="PB_BulletClear"/>
             </Grid>
         </ScrollViewer>
     </Grid>

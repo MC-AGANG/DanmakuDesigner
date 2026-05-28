@@ -170,11 +170,15 @@ Class MainWindow
     Private Sub BT_Run_Clicked()
         SetBorderColor(2)
         TM_Main.Start()
+        BT_Pause.IsEnabled = True
+        BT_Run.IsEnabled = False
     End Sub
 
     Private Sub BT_Pause_Clicked()
         SetBorderColor(1)
         TM_Main.Stop()
+        BT_Pause.IsEnabled = False
+        BT_Run.IsEnabled = True
     End Sub
 
     Private Sub BT_Stop_Clicked()
@@ -184,18 +188,38 @@ Class MainWindow
         SW_PF.CT_MSPT.Clear()
         TM_Main.Stop()
         SW_Timeline.Position = 0
+        BT_Pause.IsEnabled = False
+        BT_Run.IsEnabled = True
     End Sub
 
     Private Sub BT_NewFile_Clicked()
-        SetBorderColor(1)
-        WorkArea.Visibility = Visibility.Visible
+        OpenFile()
     End Sub
 
     Private Sub BT_CloseFile_Clicked()
-        SetBorderColor(0)
-        WorkArea.Visibility = Visibility.Hidden
+        CloseFile()
     End Sub
-
+    Public Sub OpenFile()
+        SetBorderColor(1)
+        WorkArea.Visibility = Visibility.Visible
+        BT_Save.IsEnabled = True
+        BT_SaveAs.IsEnabled = True
+        BT_CloseFile.IsEnabled = True
+        BT_Run.IsEnabled = True
+        BT_Stop.IsEnabled = True
+    End Sub
+    Public Sub CloseFile()
+        BT_Stop_Clicked()
+        WorkArea.Visibility = Visibility.Hidden
+        BT_Save.IsEnabled = False
+        BT_SaveAs.IsEnabled = False
+        BT_CloseFile.IsEnabled = False
+        BT_Run.IsEnabled = False
+        BT_Pause.IsEnabled = False
+        BT_Stop.IsEnabled = False
+        BT_Stop.IsEnabled = False
+        SetBorderColor(0)
+    End Sub
     Private Sub Window_Activated(sender As Object, e As EventArgs)
         Dim c As SolidColorBrush = BottomBar.Background
         For i = 0 To 1
@@ -261,5 +285,9 @@ Class MainWindow
     Private Sub BT_Redo_Clicked()
         UndoMgr.Redo()
         SW_Property.UpdateData()
+    End Sub
+
+    Private Sub BT_Open_Clicked()
+        OpenFile()
     End Sub
 End Class

@@ -141,7 +141,7 @@ Public Class PropertyBoard_EnemyGroup
     End Sub
 
     Private Sub TB_Direction_End_LostKeyboardFocus(sender As Object, e As KeyboardFocusChangedEventArgs)
-        UndoMgr.Execute(New PropertyChangeCommand(Of Double)(Target, NameOf(Target.Direction_End), Target.Direction_End, Val(TB_X_End.Text)))
+        UndoMgr.Execute(New PropertyChangeCommand(Of Double)(Target, NameOf(Target.Direction_End), Target.Direction_End, Val(TB_Direction_End.Text)))
     End Sub
 
     Private Sub TB_Count_LostKeyboardFocus(sender As Object, e As KeyboardFocusChangedEventArgs)

@@ -30,8 +30,10 @@
     Private Sub UserControl_MouseUp(sender As Object, e As MouseButtonEventArgs)
         If LeftButtonPressed AndAlso e.LeftButton = MouseButtonState.Released Then
             RaiseEvent Clicked()
-            RC_Icon.Opacity = 1
-            LB_Text.Opacity = 1
+            If IsEnabled Then
+                RC_Icon.Opacity = 1
+                LB_Text.Opacity = 1
+            End If
         End If
         LeftButtonPressed = False
 
@@ -51,8 +53,10 @@
 
     Private Sub UserControl_MouseLeave(sender As Object, e As MouseEventArgs)
         Background = New SolidColorBrush(Color.FromArgb(1, 255, 255, 255))
-        RC_Icon.Opacity = 1
-        LB_Text.Opacity = 1
+        If IsEnabled Then
+            RC_Icon.Opacity = 1
+            LB_Text.Opacity = 1
+        End If
     End Sub
 
     Private Sub UserControl_IsEnabledChanged(sender As Object, e As DependencyPropertyChangedEventArgs)

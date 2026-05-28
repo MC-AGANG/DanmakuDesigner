@@ -94,23 +94,23 @@ Public Class EnemyAddEvent
     Public Property Speed As Double = 0
     Public Property Direction As Double = 180
     Public Property Defence As Double = 0
-    Public Property Random_X As Double = 0
-    Public Property Random_Y As Double = 0
-    Public Property Random_Speed As Double = 0
-    Public Property Random_Direction As Double = 0
+    Public Property X_Random As Double = 0
+    Public Property Y_Random As Double = 0
+    Public Property Speed_Random As Double = 0
+    Public Property Direction_Random As Double = 0
     Public Sub New()
         _Type = 0
     End Sub
     Public Overrides Sub Run()
         STG.Add(New Enemy(EnemyType,
                           EnemyColor,
-                          X + Random_X * 2 * Rnd() - Random_X,
-                          Y + Random_Y * 2 * Rnd() - Random_Y,
+                          X + X_Random * 2 * Rnd() - X_Random,
+                          Y + Y_Random * 2 * Rnd() - Y_Random,
                           HP,
                           Items,
                           Life,
-                          Speed + Random_Speed * 2 * Rnd() - Random_Speed,
-                          Direction + Random_Direction * 2 * Rnd() - Random_Direction,
+                          Speed + Speed_Random * 2 * Rnd() - Speed_Random,
+                          Direction + Direction_Random * 2 * Rnd() - Direction_Random,
                           Defence) With {
                           .Tag = Tag
          })
@@ -121,8 +121,6 @@ Public Class EnemyAddEvent
     End Sub
     Public Overrides Sub ShowProperty()
         SW_Property.Load(Me)
-        SW_Property.PB_EnemyGroup.Visibility = Visibility.Hidden
-        SW_Property.PB_EnemyClear.Visibility = Visibility.Hidden
     End Sub
 End Class
 Public Class EnemyGroupEvent
@@ -180,8 +178,6 @@ Public Class EnemyGroupEvent
     End Sub
     Public Overrides Sub ShowProperty()
         SW_Property.Load(Me)
-        SW_Property.PB_Enemy.Visibility = Visibility.Hidden
-        SW_Property.PB_EnemyClear.Visibility = Visibility.Hidden
     End Sub
 End Class
 Public Class EnemyClearEvent
@@ -210,31 +206,71 @@ Public Class EnemyClearEvent
     End Sub
     Public Overrides Sub ShowProperty()
         SW_Property.Load(Me)
-        SW_Property.PB_Enemy.Visibility = Visibility.Hidden
-        SW_Property.PB_EnemyGroup.Visibility = Visibility.Hidden
     End Sub
 End Class
 Public Class BulletAddEvent
     Inherits EventPoint
-    Public Target As Bullet
-    Public Property BulletType As BulletType
-        Set(value As BulletType)
-            _BulletType = value
-        End Set
-        Get
-            Return _BulletType
-        End Get
-    End Property
-    Private _BulletType As BulletType = 0
+    Public Property Sniper As Boolean = True
+    Public Property BulletType As Byte = 1
+    Public Property BulletColor As Byte = 0
+    Public Property X As Double = 192
+    Public Property Y As Double = 224
+    Public Property Speed As Double = 1
+    Public Property Direction As Double = 0
+    Public Property X_Random As Double = 0
+    Public Property Y_Random As Double = 0
+    Public Property Speed_Random As Double = 0
+    Public Property Direction_Random As Double = 0
+    Public Property Breakable As Boolean = True
     Public Sub New()
         Type = EventType.Bullet
-        Target = New Bullet(0, 0, 0, 0, 0, 0, 0)
     End Sub
     Public Overrides Sub Run()
-        If BulletType = BulletType.Default Then
-            STG.Add(Target)
+        If BulletType = 0 Then
+            If Sniper Then
+                STG.Add(New Bullet.Laser(BulletColor,
+                                         X + X_Random * 2 * Rnd() - X_Random,
+                                         Y + Y_Random * 2 * Rnd() - Y_Random,
+                                         16,
+                                         Speed,
+                                         Speed_Random) With {
+                                         .Tag = Tag,
+                                         .Breakable = Breakable,
+                                         .Direction = .Direction + Direction + Direction_Random * 2 * Rnd() - Direction_Random})
+            Else
+                STG.Add(New Bullet.Laser(BulletColor,
+                                         X + X_Random * 2 * Rnd() - X_Random,
+                                         Y + Y_Random * 2 * Rnd() - Y_Random,
+                                         Direction + Direction_Random * 2 * Rnd() - Direction_Random,
+                                         16,
+                                         Speed,
+                                         Speed_Random) With {
+                                         .Tag = Tag,
+                                         .Breakable = Breakable})
+            End If
         Else
-            STG.Add(New Bullet(Target.BulletType, Target.BulletColor, Target.X, Target.Y, Target.Speed, Target.Direction))
+            If Sniper Then
+                STG.Add(New Bullet(BulletType,
+                                   BulletColor,
+                                   X + X_Random * 2 * Rnd() - X_Random,
+                                   Y + Y_Random * 2 * Rnd() - Y_Random,
+                                   Speed + Speed_Random * 2 * Rnd() - Speed_Random,
+                                   Direction + Direction_Random * 2 * Rnd() - Direction_Random) With {
+                                   .Tag = Tag,
+                                   .Breakable = Breakable
+                })
+            Else
+                STG.Add(New Bullet(BulletType,
+                                   BulletColor,
+                                   X + X_Random * 2 * Rnd() - X_Random,
+                                   Y + Y_Random * 2 * Rnd() - Y_Random,
+                                   Speed + Speed_Random * 2 * Rnd() - Speed_Random,
+                                   Direction + Direction_Random * 2 * Rnd() - Direction_Random,
+                                   0) With {
+                                   .Tag = Tag,
+                                   .Breakable = Breakable
+                })
+            End If
         End If
     End Sub
 
@@ -243,22 +279,23 @@ Public Class BulletAddEvent
         LB_Main.Content = "⬛"
     End Sub
     Public Overrides Sub ShowProperty()
-
+        SW_Property.Load(Me)
     End Sub
 End Class
 Public Class BulletGroupEvent
     Inherits EventPoint
-    Public Target_From As Bullet
-    Public Target_End As Bullet
-    Public Property BulletType As BulletType
-        Set(value As BulletType)
-            _BulletType = value
-        End Set
-        Get
-            Return _BulletType
-        End Get
-    End Property
-    Private _BulletType As BulletType = 0
+    Public Property Sniper As Boolean = True
+    Public Property BulletType As Byte = 1
+    Public Property BulletColor As Byte = 0
+    Public Property X As Double = 192
+    Public Property Y As Double = 224
+    Public Property Speed As Double = 1
+    Public Property Direction As Double = 0
+    Public Property X_End As Double = 192
+    Public Property Y_End As Double = 224
+    Public Property Speed_End As Double = 1
+    Public Property Direction_End As Double = 0
+    Public Property Breakable As Boolean = True
     Public Property Count As UInteger
         Set(value As UInteger)
             _Count = value
@@ -268,11 +305,9 @@ Public Class BulletGroupEvent
             Return _Count
         End Get
     End Property
-    Private _Count As UInteger
+    Private _Count As UInteger = 1
     Public Sub New()
         Type = EventType.Bullet
-        Target_From = New Bullet(0, 0, 0, 0, 0)
-        Target_End = New Bullet(0, 0, 0, 0, 0)
     End Sub
     Public Overrides Sub Run()
         For i As UInteger = 1 To Count
@@ -281,22 +316,52 @@ Public Class BulletGroupEvent
     End Sub
     Private Function GetInterpolation(i As UInteger) As Bullet
         Dim e As Bullet
-        If BulletType = BulletType.Default Then
-            e = New Bullet(Target_From.BulletType,
-                                Target_From.BulletColor,
-                                Target_From.X + (Target_End.X - Target_From.X) / Count * (i - 1),
-                                Target_From.Y + (Target_End.Y - Target_From.Y) / Count * (i - 1),
-                                Target_From.Speed + (Target_End.Speed - Target_From.Speed) / Count * (i - 1),
-                                Target_From.Direction + (Target_End.Direction - Target_From.Direction) / Count * (i - 1),
-                                0)
+        If BulletType = 0 Then
+            If Sniper Then
+                e = New Bullet.Laser(BulletColor,
+                                         X + (X_End - X) / Count * (i - 1),
+                                         Y + (Y_End - Y) / Count * (i - 1),
+                                         16,
+                                         Speed,
+                                         Speed_End) With {
+                                         .Tag = Tag,
+                                         .Breakable = Breakable,
+                                         .Direction = .Direction + (Direction_End - Direction) / Count * (i - 1)}
+            Else
+                e = New Bullet.Laser(BulletColor,
+                                         X + (X_End - X) / Count * (i - 1),
+                                         Y + (Y_End - Y) / Count * (i - 1),
+                                         Direction + +(Direction_End - Direction) / Count * (i - 1),
+                                         16,
+                                         Speed,
+                                         Speed_End) With {
+                                         .Tag = Tag,
+                                         .Breakable = Breakable}
+            End If
         Else
-            e = New Bullet(Target_From.BulletType,
-                                Target_From.BulletColor,
-                                Target_From.X + (Target_End.X - Target_From.X) / Count * (i - 1),
-                                Target_From.Y + (Target_End.Y - Target_From.Y) / Count * (i - 1),
-                                Target_From.Speed + (Target_End.Speed - Target_From.Speed) / Count * (i - 1),
-                                Target_From.Direction + (Target_End.Direction - Target_From.Direction) / Count * (i - 1))
+            If Sniper Then
+                e = New Bullet(BulletType,
+                               BulletColor,
+                               X + (X_End - X) / Count * (i - 1),
+                               Y + (Y_End - Y) / Count * (i - 1),
+                               Speed + (Speed_End - Speed) / Count * (i - 1),
+                               Direction + (Direction_End - Direction) / Count * (i - 1)) With {
+                               .Tag = Tag
+                    }
+
+            Else
+                e = New Bullet(BulletType,
+                               BulletColor,
+                               X + (X_End - X) / Count * (i - 1),
+                               Y + (Y_End - Y) / Count * (i - 1),
+                               Speed + (Speed_End - Speed) / Count * (i - 1),
+                               Direction + (Direction_End - Direction) / Count * (i - 1),
+                               0) With {
+                               .Tag = Tag
+                    }
+            End If
         End If
+
         Return e
     End Function
     Public Overrides Sub UpdateIcon()
@@ -304,16 +369,26 @@ Public Class BulletGroupEvent
         LB_Main.Content = CStr(Count)
     End Sub
     Public Overrides Sub ShowProperty()
-
+        SW_Property.Load(Me)
     End Sub
 End Class
 Public Class BulletClearEvent
     Inherits EventPoint
+    Public Property UseTag As Boolean = False
+    Public Property Force As Boolean = False
     Public Sub New()
         Type = EventType.ClearBullet
     End Sub
     Public Overrides Sub Run()
-        STG.ClearBullet()
+        If UseTag Then
+            For Each e In STG.SearchBullet(Tag)
+                e.Break(True, Force)
+            Next
+        Else
+            For Each e In STG.SearchBullet()
+                e.Break(True, Force)
+            Next
+        End If
     End Sub
 
     Public Overrides Sub UpdateIcon()
@@ -321,10 +396,6 @@ Public Class BulletClearEvent
         LB_Main.Content = "⬛"
     End Sub
     Public Overrides Sub ShowProperty()
-
+        SW_Property.Load(Me)
     End Sub
 End Class
-Public Enum BulletType As Byte
-    [Default] = 0
-    Sniper = 1
-End Enum

@@ -100,6 +100,21 @@ Public Class SubWindow_TimeLine
         UndoMgr.Execute(New EventAddCommand(e))
     End Sub
 
+    Private Sub BT_AddBullet_Clicked()
+        Dim e As New BulletAddEvent With {.Tick = Position}
+        UndoMgr.Execute(New EventAddCommand(e))
+    End Sub
+
+    Private Sub BT_AddBullets_Clicked()
+        Dim e As New BulletGroupEvent With {.Tick = Position}
+        UndoMgr.Execute(New EventAddCommand(e))
+    End Sub
+
+    Private Sub BT_ClearBullet_Clicked()
+        Dim e As New BulletClearEvent With {.Tick = Position}
+        UndoMgr.Execute(New EventAddCommand(e))
+    End Sub
+
     Private Sub BT_DeleteObject_Clicked()
         Dim del As New List(Of EventPoint)
         For Each e In Events

@@ -25,10 +25,10 @@ Public Class PropertyBoard_Enemy
                 TB_Direction.Text = Target.Direction
                 TB_Defence.Text = Target.Defence
                 TB_Tag.Text = Target.Tag
-                TB_X_Rand.Text = Target.Random_X
-                TB_Y_Rand.Text = Target.Random_Y
-                TB_Speed_Rand.Text = Target.Random_Speed
-                TB_Direction_Rand.Text = Target.Random_Direction
+                TB_X_Rand.Text = Target.X_Random
+                TB_Y_Rand.Text = Target.Y_Random
+                TB_Speed_Rand.Text = Target.Speed_Random
+                TB_Direction_Rand.Text = Target.Direction_Random
             Else
                 Visibility = Visibility.Hidden
             End If
@@ -88,7 +88,9 @@ Public Class PropertyBoard_Enemy
     End Sub
 
     Private Sub CB_EnemyColor_SelectionChanged(sender As Object, e As SelectionChangedEventArgs)
-        UndoMgr.Execute(New PropertyChangeCommand(Of Byte)(Target, NameOf(Target.EnemyColor), Target.EnemyColor, CB_EnemyColor.SelectedIndex))
+        If CB_EnemyColor.SelectedIndex >= 0 Then
+            UndoMgr.Execute(New PropertyChangeCommand(Of Byte)(Target, NameOf(Target.EnemyColor), Target.EnemyColor, CB_EnemyColor.SelectedIndex))
+        End If
     End Sub
 
     Private Sub TB_X_LostKeyboardFocus(sender As Object, e As KeyboardFocusChangedEventArgs)
@@ -124,19 +126,19 @@ Public Class PropertyBoard_Enemy
     End Sub
 
     Private Sub TB_X_Rand_LostKeyboardFocus(sender As Object, e As KeyboardFocusChangedEventArgs)
-        UndoMgr.Execute(New PropertyChangeCommand(Of Double)(Target, NameOf(Target.Random_X), Target.Random_X, Val(TB_X_Rand.Text)))
+        UndoMgr.Execute(New PropertyChangeCommand(Of Double)(Target, NameOf(Target.X_Random), Target.X_Random, Val(TB_X_Rand.Text)))
     End Sub
 
     Private Sub TB_Y_Rand_LostKeyboardFocus(sender As Object, e As KeyboardFocusChangedEventArgs)
-        UndoMgr.Execute(New PropertyChangeCommand(Of Double)(Target, NameOf(Target.Random_Y), Target.Random_Y, Val(TB_Y_Rand.Text)))
+        UndoMgr.Execute(New PropertyChangeCommand(Of Double)(Target, NameOf(Target.Y_Random), Target.Y_Random, Val(TB_Y_Rand.Text)))
     End Sub
 
     Private Sub TB_Speed_Rand_LostKeyboardFocus(sender As Object, e As KeyboardFocusChangedEventArgs)
-        UndoMgr.Execute(New PropertyChangeCommand(Of Double)(Target, NameOf(Target.Random_Speed), Target.Random_Speed, Val(TB_Speed_Rand.Text)))
+        UndoMgr.Execute(New PropertyChangeCommand(Of Double)(Target, NameOf(Target.Speed_Random), Target.Speed_Random, Val(TB_Speed_Rand.Text)))
     End Sub
 
     Private Sub TB_Direction_Rand_LostKeyboardFocus(sender As Object, e As KeyboardFocusChangedEventArgs)
-        UndoMgr.Execute(New PropertyChangeCommand(Of Double)(Target, NameOf(Target.Random_Direction), Target.Random_Direction, Val(TB_X_Rand.Text)))
+        UndoMgr.Execute(New PropertyChangeCommand(Of Double)(Target, NameOf(Target.Direction_Random), Target.Direction_Random, Val(TB_Direction_Rand.Text)))
     End Sub
 
 End Class

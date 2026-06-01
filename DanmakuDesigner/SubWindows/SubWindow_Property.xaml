@@ -302,6 +302,7 @@
                 <local:PropertyBoard_Bullet VerticalAlignment="Top" Visibility="Hidden" x:Name="PB_Bullet"/>
                 <local:PropertyBoard_BulletGroup VerticalAlignment="Top" Visibility="Hidden" x:Name="PB_BulletGroup"/>
                 <local:PropertyBoard_BulletClear VerticalAlignment="Top" Visibility="Hidden" x:Name="PB_BulletClear"/>
+                <local:PropertyBoard_Stage VerticalAlignment="Top" Visibility="Hidden" x:Name="PB_Stage"/>
             </Grid>
         </ScrollViewer>
     </Grid>

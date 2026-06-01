@@ -28,6 +28,10 @@ Public Class SubWindow_Property
         HideAll()
         PB_BulletClear.Load(Target)
     End Sub
+    Public Sub Load(Target As TreeNode.Node_Stage)
+        HideAll()
+        PB_Stage.Load(Target)
+    End Sub
     Public Sub HideAll()
         PB_Enemy.Visibility = Visibility.Hidden
         PB_EnemyGroup.Visibility = Visibility.Hidden
@@ -35,6 +39,7 @@ Public Class SubWindow_Property
         PB_Bullet.Visibility = Visibility.Hidden
         PB_BulletGroup.Visibility = Visibility.Hidden
         PB_BulletClear.Visibility = Visibility.Hidden
+        PB_Stage.Visibility = Visibility.Hidden
     End Sub
     Private Sub ScrollViewer_KeyDown(sender As Object, e As KeyEventArgs)
         If e.Key = Key.Up OrElse e.Key = Key.Left OrElse e.Key = Key.Right OrElse e.Key = Key.Down Then

@@ -321,12 +321,12 @@
         
         <GridSplitter Background="#FF2D2D30" Width="5" Grid.Column="1" Grid.RowSpan="3" ResizeBehavior="PreviousAndNext" Focusable="False"/>
         <ScrollViewer Name="SV_Main" Grid.Row="1" Grid.RowSpan="2" Grid.Column="2" Style="{DynamicResource ScrollViewerStyle1}" HorizontalScrollBarVisibility="Visible" ScrollChanged="SV_Main_ScrollChanged" PreviewKeyDown="SV_Main_PreviewKeyDown">
-            <Canvas Name="CV_Main" Width="2000" x:FieldModifier="public">
+            <Canvas Name="CV_Main" Width="2000" x:FieldModifier="public" HorizontalAlignment="Left">
                 <Rectangle Canvas.Left="-1" Height="256" Width="2" Fill="#3F94F591" Stroke="#FF94F591" Name="RC_ProgressMain"/>
             </Canvas>
         </ScrollViewer>
         <ScrollViewer Name="SV_Time" Grid.Column="2" VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Hidden" Margin="0,0,17,0" PreviewKeyDown="SV_Time_PreviewKeyDown">
-            <Canvas Name="CV_Time" Background="#FF202020" MouseDown="CV_Time_MouseDown" Width="2000" Focusable="True">
+            <Canvas Name="CV_Time" Background="#FF202020" MouseDown="CV_Time_MouseDown" Width="2000" Focusable="True" HorizontalAlignment="Left">
                 <Rectangle Canvas.Left="-3" Height="24" Width="6" Fill="#3F94F591" Stroke="#FF94F591" Name="RC_ProgressTime"/>
             </Canvas>
         </ScrollViewer>

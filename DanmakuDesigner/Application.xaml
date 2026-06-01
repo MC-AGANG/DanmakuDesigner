@@ -5,7 +5,21 @@
              Startup="Application_Startup"
     xmlns:theme="clr-namespace:Microsoft.Windows.Themes;assembly=PresentationFramework.Aero2">
     <Application.Resources>
-
+        <Style TargetType="{x:Type ContextMenu}">
+            <Setter Property="Background" Value="#282828" />
+            <Setter Property="BorderBrush" Value="#101010" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Foreground" Value="White" />
+        </Style>
+        <Style TargetType="{x:Type MenuItem}">
+            
+            <Setter Property="Background" Value="#282828" />
+            <Setter Property="BorderBrush" Value="#101010" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Foreground" Value="White" />
+        </Style>
         <Style x:Key="FocusVisual">
             <Setter Property="Control.Template">
                 <Setter.Value>

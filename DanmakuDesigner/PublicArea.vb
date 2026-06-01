@@ -4,9 +4,11 @@
     Public Shared SW_Performance As SubWindow_Performance
     Public Shared SW_Timeline As SubWindow_TimeLine
     Public Shared SW_Property As SubWindow_Property
+    Public Shared SW_Project As SubWindow_Project
     Public Shared Events As New List(Of EventPoint)
     Public Shared FocusedTextBox As TextBox
     Public Shared UndoMgr As New UndoManager
+    Public Shared Timelines As New List(Of List(Of EventPoint))
 
     Public Shared Function IsChildOf(child As DependencyObject, parent As DependencyObject) As Boolean
         While child IsNot Nothing
@@ -18,6 +20,7 @@
         Return False
     End Function
 End Class
+
 Module PublicFunctions
 
 End Module

@@ -106,7 +106,7 @@ Public Class PropertyBoard_Enemy
     End Sub
 
     Private Sub TB_Life_LostKeyboardFocus(sender As Object, e As KeyboardFocusChangedEventArgs)
-        UndoMgr.Execute(New PropertyChangeCommand(Of Long)(Target, NameOf(Target.Life), Target.Life, Val(TB_Life.Text)))
+        UndoMgr.Execute(New PropertyChangeCommand(Of Integer)(Target, NameOf(Target.Life), Target.Life, Val(TB_Life.Text)))
     End Sub
 
     Private Sub TB_Speed_LostKeyboardFocus(sender As Object, e As KeyboardFocusChangedEventArgs)

@@ -167,6 +167,66 @@ Namespace My.Resources
         '''<summary>
         '''  查找 System.Byte[] 类型的本地化资源。
         '''</summary>
+        Friend Shared ReadOnly Property icon_action() As Byte()
+            Get
+                Dim obj As Object = ResourceManager.GetObject("icon_action", resourceCulture)
+                Return CType(obj,Byte())
+            End Get
+        End Property
+        
+        '''<summary>
+        '''  查找 System.Byte[] 类型的本地化资源。
+        '''</summary>
+        Friend Shared ReadOnly Property icon_action_bullet() As Byte()
+            Get
+                Dim obj As Object = ResourceManager.GetObject("icon_action_bullet", resourceCulture)
+                Return CType(obj,Byte())
+            End Get
+        End Property
+        
+        '''<summary>
+        '''  查找 System.Byte[] 类型的本地化资源。
+        '''</summary>
+        Friend Shared ReadOnly Property icon_action_enemy() As Byte()
+            Get
+                Dim obj As Object = ResourceManager.GetObject("icon_action_enemy", resourceCulture)
+                Return CType(obj,Byte())
+            End Get
+        End Property
+        
+        '''<summary>
+        '''  查找 System.Byte[] 类型的本地化资源。
+        '''</summary>
+        Friend Shared ReadOnly Property icon_page() As Byte()
+            Get
+                Dim obj As Object = ResourceManager.GetObject("icon_page", resourceCulture)
+                Return CType(obj,Byte())
+            End Get
+        End Property
+        
+        '''<summary>
+        '''  查找 System.Byte[] 类型的本地化资源。
+        '''</summary>
+        Friend Shared ReadOnly Property icon_project() As Byte()
+            Get
+                Dim obj As Object = ResourceManager.GetObject("icon_project", resourceCulture)
+                Return CType(obj,Byte())
+            End Get
+        End Property
+        
+        '''<summary>
+        '''  查找 System.Byte[] 类型的本地化资源。
+        '''</summary>
+        Friend Shared ReadOnly Property icon_stage() As Byte()
+            Get
+                Dim obj As Object = ResourceManager.GetObject("icon_stage", resourceCulture)
+                Return CType(obj,Byte())
+            End Get
+        End Property
+        
+        '''<summary>
+        '''  查找 System.Byte[] 类型的本地化资源。
+        '''</summary>
         Friend Shared ReadOnly Property logo_w() As Byte()
             Get
                 Dim obj As Object = ResourceManager.GetObject("logo_w", resourceCulture)

@@ -515,7 +515,7 @@
                             <RowDefinition MinHeight="128"/>
                         </Grid.RowDefinitions>
                         <local:SubWindow Title="项目管理器" Margin="0,0,8,0">
-                            
+                            <local:SubWindow_Project Grid.Row="1"/>
                         </local:SubWindow>
                         <GridSplitter Height="5" Grid.Row="1" ResizeDirection="Rows"
                             ResizeBehavior="PreviousAndNext"

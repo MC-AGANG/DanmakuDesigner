@@ -145,6 +145,24 @@
   <data name="DeleteObject" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>Resources\DeleteObject.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
+  <data name="icon_action" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\icon_action.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="icon_action_bullet" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\icon_action_bullet.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="icon_action_enemy" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\icon_action_enemy.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="icon_page" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\icon_page.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="icon_project" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\icon_project.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="icon_stage" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\icon_stage.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
   <data name="logo_w" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>Resources\logo_w.png;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>

@@ -1,0 +1,122 @@
+<UserControl x:Class="BackgroundEditor"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="#1E1E1E">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="36" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Border Background="#252526" BorderBrush="#3F3F46" BorderThickness="0,0,0,1" Padding="8,0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Button Style="{StaticResource VS.ToolButton}" Click="Add2D_Click" Height="32" ToolTip="添加一个 2D 背景图层">
+                    <StackPanel Orientation="Horizontal">
+                        <Image Source="/Assets/Icons/Add_16x.png" Width="16" Height="16" />
+                        <TextBlock Text="2D 图层" Margin="5,0,2,0" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+                <Button Grid.Column="1" Style="{StaticResource VS.ToolButton}" Click="Add3D_Click" Height="32" ToolTip="添加一个 3D 背景图层">
+                    <StackPanel Orientation="Horizontal">
+                        <Image Source="/Assets/Icons/Add_16x.png" Width="16" Height="16" />
+                        <TextBlock Text="3D 图层" Margin="5,0,2,0" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+                <Button Grid.Column="2" Style="{StaticResource VS.ToolButton}" Click="OpenMeshEditor_Click" Height="32"
+                        x:Name="MeshButton" ToolTip="打开当前 3D 图层的建模工具">
+                    <StackPanel Orientation="Horizontal">
+                        <Image Source="/Assets/Icons/Media_16x.png" Width="16" Height="16" />
+                        <TextBlock Text="3D 建模" Margin="5,0,2,0" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+                <Button Grid.Column="3" Style="{StaticResource VS.ToolButton}" Click="DeleteLayer_Click" Height="32" ToolTip="删除当前背景图层">
+                    <Image Source="/Assets/Icons/DeleteEvent_16x.png" Width="16" Height="16" />
+                </Button>
+                <TextBlock Grid.Column="5" x:Name="SummaryText" FontSize="10" Foreground="#8A8A8A" VerticalAlignment="Center" />
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="220" />
+                <ColumnDefinition Width="1" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="1" />
+                <ColumnDefinition Width="300" />
+            </Grid.ColumnDefinitions>
+
+            <Border Background="#252526" BorderBrush="#3F3F46" BorderThickness="0,0,1,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="30" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <Border Background="#2A2A2B" BorderBrush="#3F3F46" BorderThickness="0,0,0,1" Padding="10,0">
+                        <Grid>
+                            <TextBlock Text="背景图层" FontSize="11" FontWeight="SemiBold" Foreground="#B0B0B0" VerticalAlignment="Center" />
+                            <TextBlock x:Name="LayerCountText" HorizontalAlignment="Right" FontSize="10" Foreground="#6D6D6D" VerticalAlignment="Center" />
+                        </Grid>
+                    </Border>
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                        <StackPanel x:Name="LayerHost" />
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+
+            <Border Grid.Column="1" Background="#3F3F46" />
+
+            <Grid Grid.Column="2" Background="#1A1A1B">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="26" />
+                </Grid.RowDefinitions>
+                <Viewbox Stretch="Uniform" Margin="18" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Border BorderBrush="#3F3F46" BorderThickness="1" Background="Black">
+                        <Grid x:Name="PreviewHost" Width="384" Height="448" />
+                    </Border>
+                </Viewbox>
+                <Border Grid.Row="1" Background="#202021" BorderBrush="#3F3F46" BorderThickness="0,1,0,0" Padding="10,0">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock x:Name="PreviewHint" FontSize="10.5" Foreground="#8A8A8A" VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="1" Text="预览帧" FontSize="10" Foreground="#8A8A8A" VerticalAlignment="Center" Margin="8,0,6,0" />
+                        <Slider Grid.Column="2" x:Name="TickSlider" Width="160" Minimum="0" Maximum="0" IsSnapToTickEnabled="True"
+                                VerticalAlignment="Center" ValueChanged="TickSlider_ValueChanged" />
+                        <TextBlock Grid.Column="3" x:Name="TickText" FontSize="10" Foreground="#DCDCAA" Width="54" TextAlignment="Right"
+                                   VerticalAlignment="Center" FontFamily="Consolas" />
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <Border Grid.Column="3" Background="#3F3F46" />
+
+            <Border Grid.Column="4" Background="#252526" BorderBrush="#3F3F46" BorderThickness="1,0,0,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="30" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <Border Background="#2A2A2B" BorderBrush="#3F3F46" BorderThickness="0,0,0,1" Padding="10,0">
+                        <TextBlock Text="图层属性" FontSize="11" FontWeight="SemiBold" Foreground="#B0B0B0" VerticalAlignment="Center" />
+                    </Border>
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="10,9,10,20">
+                        <StackPanel x:Name="InspectorHost" />
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

@@ -1,0 +1,116 @@
+<UserControl x:Class="TimelineEditor"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="#1E1E1E" Focusable="True">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="36" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Border Background="#252526" BorderBrush="#3F3F46" BorderThickness="0,0,0,1" Padding="8,0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <Button x:Name="AddClipButton" Style="{StaticResource VS.ToolButton}" Click="AddClip_Click" Height="32" ToolTip="在播放头位置添加片段 (Insert)">
+                    <StackPanel Orientation="Horizontal">
+                        <Image Source="/Assets/Icons/AddItem_16x.png" Width="16" Height="16" />
+                        <TextBlock Text="片段" Margin="5,0,2,0" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+                <Button Grid.Column="1" x:Name="AddTrackButton" Style="{StaticResource VS.ToolButton}" Click="AddTrack_Click" Height="32" ToolTip="添加敌机轨道或事件轨道">
+                    <StackPanel Orientation="Horizontal">
+                        <Image Source="/Assets/Icons/Add_16x.png" Width="16" Height="16" />
+                        <TextBlock Text="轨道" Margin="5,0,2,0" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+                <Button Grid.Column="2" x:Name="DeleteClipButton" Style="{StaticResource VS.ToolButton}" Click="Delete_Click" Height="32" ToolTip="删除选中的片段 (Delete)">
+                    <Image Source="/Assets/Icons/DeleteEvent_16x.png" Width="16" Height="16" />
+                </Button>
+                <Button Grid.Column="3" x:Name="DuplicateButton" Style="{StaticResource VS.ToolButton}" Click="Duplicate_Click" Height="32" ToolTip="复制选中的片段 (Ctrl+D)">
+                    <Image Source="/Assets/Icons/Copy_16x.png" Width="16" Height="16" />
+                </Button>
+
+                <StackPanel Grid.Column="5" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,12,0">
+                    <TextBlock Text="播放头" FontSize="10" Foreground="#8A8A8A" VerticalAlignment="Center" Margin="0,0,6,0" />
+                    <TextBlock x:Name="PlayheadText" Text="0 帧 · 0:00.00" FontFamily="{StaticResource VS.Font}" FontSize="11" Foreground="#DCDCAA" VerticalAlignment="Center" />
+                </StackPanel>
+
+                <CheckBox Grid.Column="6" x:Name="SnapCheck" Content="吸附" IsChecked="True" VerticalAlignment="Center" Margin="0,0,12,0"
+                          ToolTip="拖动时吸附到网格；按住 Alt 临时关闭吸附" />
+
+                <StackPanel Grid.Column="7" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Style="{StaticResource VS.IconButton}" Click="ZoomOut_Click" ToolTip="缩小 (Ctrl+-)">
+                        <Image Source="/Assets/Icons/ZoomOut_16x.png" Width="16" Height="16" />
+                    </Button>
+                    <TextBlock x:Name="ZoomText" Text="100%" Width="46" TextAlignment="Center" FontSize="10" Foreground="#B0B0B0" VerticalAlignment="Center" />
+                    <Button Style="{StaticResource VS.IconButton}" Click="ZoomIn_Click" ToolTip="放大 (Ctrl++)">
+                        <Image Source="/Assets/Icons/ZoomIn_16x.png" Width="16" Height="16" />
+                    </Button>
+                    <Button Style="{StaticResource VS.ToolButton}" Click="ZoomFit_Click" ToolTip="适配窗口" Margin="2,0,0,0" Height="30">
+                        <Image Source="/Assets/Icons/Zoom_16x.png" Width="16" Height="16" />
+                    </Button>
+                </StackPanel>
+
+                <Button Grid.Column="8" Style="{StaticResource VS.ToolButton}" Click="ViewPreview_Click" ToolTip="打开试玩预览" Height="30" Margin="6,0,0,0">
+                    <StackPanel Orientation="Horizontal">
+                        <Image Source="/Assets/Icons/PlaybackPreview_16x.png" Width="16" Height="16" />
+                        <TextBlock Text="预览" Margin="5,0,2,0" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="188" />
+                <ColumnDefinition Width="1" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="30" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <Border Background="#252526" BorderBrush="#3F3F46" BorderThickness="0,0,0,1">
+                <Grid Margin="10,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="轨道" FontSize="11" FontWeight="SemiBold" Foreground="#B0B0B0" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="1" x:Name="TrackCountText" Text="0" FontSize="10" Foreground="#6D6D6D" VerticalAlignment="Center" />
+                </Grid>
+            </Border>
+
+            <Border Grid.Column="1" Background="#3F3F46" />
+
+            <ScrollViewer x:Name="RulerScroll" Grid.Column="2" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled"
+                          Background="#252526" BorderBrush="#3F3F46" BorderThickness="0,0,0,1">
+                <Canvas x:Name="RulerCanvas" Height="30" Background="Transparent" ClipToBounds="True" />
+            </ScrollViewer>
+
+            <ScrollViewer x:Name="HeaderScroll" Grid.Row="1" VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Disabled"
+                          VerticalContentAlignment="Top"
+                          Background="#252526" BorderBrush="#3F3F46" BorderThickness="0,0,1,0">
+                <StackPanel x:Name="HeaderHost" VerticalAlignment="Top" />
+            </ScrollViewer>
+
+            <ScrollViewer x:Name="LaneScroll" Grid.Row="1" Grid.Column="2" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
+                          VerticalContentAlignment="Top"
+                          Background="#1E1E1E">
+                <Canvas x:Name="LaneCanvas" VerticalAlignment="Top" Background="#1E1E1E" ClipToBounds="True" />
+            </ScrollViewer>
+        </Grid>
+    </Grid>
+</UserControl>

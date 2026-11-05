@@ -424,11 +424,29 @@ Public Class ExportDialog
             Mouse.OverrideCursor = Cursors.Wait
             Dim result = SolutionExportService.ExportSolution(App.Session.Project, folder, className, templatePath, App.Session.ProjectDirectory)
             ResultFolder = result.Folder
+            Dim solutionPath = Path.Combine(result.Folder, className & ".slnx")
+            BuildAndRunService.LastSolutionPath = solutionPath
             App.Session.AddLog(IssueSeverity.Info, "已导出完整解决方案：" & result.Folder)
             If result.Warnings.Count > 0 Then
                 App.Session.AddLog(IssueSeverity.Warning, String.Join("；", result.Warnings))
             End If
-            If OpenFolderCheck.IsChecked = True Then
+
+            Dim revealedExe = False
+            If MessageBox.Show(Me, "解决方案已导出。" & Environment.NewLine & "是否立即编译？",
+                               "编译解决方案", MessageBoxButton.YesNo, MessageBoxImage.Question) = MessageBoxResult.Yes Then
+                If BuildAndRunService.EnsureDotNet10Sdk(Me) Then
+                    Dim build = BuildAndRunService.CompileSolution(solutionPath, Me)
+                    If build.Success Then
+                        BuildAndRunService.RevealFile(build.ExePath)
+                        revealedExe = True
+                        App.Session.AddLog(IssueSeverity.Info, "解决方案编译成功，已打开 exe 所在目录。")
+                    Else
+                        BuildAndRunService.ShowBuildFailure(Me, build)
+                    End If
+                End If
+            End If
+
+            If Not revealedExe AndAlso OpenFolderCheck.IsChecked = True Then
                 Try
                     Process.Start(New ProcessStartInfo("explorer.exe", result.Folder) With {.UseShellExecute = True})
                 Catch

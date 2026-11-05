@@ -1,7 +1,9 @@
 Imports System.Windows
 Imports System.Windows.Controls
+Imports System.Windows.Controls.Primitives
 Imports System.Windows.Input
 Imports System.Windows.Media
+Imports System.Windows.Threading
 Imports DanmakuDesigner.Core
 
 ''' <summary>一块 Scratch 风格积木的可视化控件。</summary>
@@ -26,6 +28,7 @@ Public Class BlockVisual
     Private _dragEnabled As Boolean = True
     Private _baseBorderBrush As Brush
     Private _paletteDragged As Boolean
+    Private _comboOpen As Boolean
 
     Public Sub New(node As BlockNode, def As BlockDefinition, owner As BlockEditorView, isPalette As Boolean, parentList As List(Of BlockNode), parentIndex As Integer)
         Me.Node = node
@@ -305,15 +308,21 @@ Public Class BlockVisual
             combo.Items.Add(opt)
         Next
         combo.SelectedValue = Node.GetField(field.Key)
-        If combo.SelectedItem Is Nothing AndAlso combo.Items.Count > 0 Then combo.SelectedIndex = 0
-        AddHandler combo.SelectionChanged, Sub()
-                                                If IsPalette Then Return
-                                                Dim selected = TryCast(combo.SelectedItem, FieldOption)
-                                                If selected Is Nothing Then Return
-                                                If selected.Value = Node.GetField(field.Key) Then Return
-                                                ApplyFieldValue(field.Key, selected.Value, False)
-                                                If field.Key = "subj" Then ApplyConditionalVisibility()
-                                            End Sub
+        Dim applySelection As Action = Sub()
+                                           If IsPalette Then Return
+                                           Dim selected = TryCast(combo.SelectedItem, FieldOption)
+                                           If selected Is Nothing Then Return
+                                           If selected.Value = Node.GetField(field.Key) Then Return
+                                           ApplyFieldValue(field.Key, selected.Value, False)
+                                           If field.Key = "subj" Then ApplyConditionalVisibility()
+                                       End Sub
+        AddHandler combo.SelectionChanged, Sub() applySelection.Invoke()
+        AddHandler combo.DropDownOpened, Sub() _comboOpen = True
+        AddHandler combo.DropDownClosed, Sub()
+                                             _comboOpen = False
+                                             ' 鼠标选择时 SelectedItem 可能稍后才更新，延迟到输入队列末尾再写回。
+                                             combo.Dispatcher.BeginInvoke(New Action(Sub() applySelection.Invoke()), DispatcherPriority.Input)
+                                         End Sub
         Return combo
     End Function
 
@@ -480,6 +489,7 @@ Public Class BlockVisual
     End Sub
 
     Private Sub Block_MouseDown(sender As Object, e As MouseButtonEventArgs)
+        If _comboOpen Then Return
         If Not IsInteractive(e.OriginalSource) Then
             _dragStart = e.GetPosition(Me)
             Owner.SelectBlock(Node)
@@ -488,6 +498,7 @@ Public Class BlockVisual
     End Sub
 
     Private Sub Block_MouseMove(sender As Object, e As MouseEventArgs)
+        If _comboOpen Then Return
         If IsPalette OrElse e.LeftButton <> MouseButtonState.Pressed Then Return
         If _dragStart Is Nothing Then Return
         Dim pos = e.GetPosition(Me)
@@ -533,7 +544,7 @@ Public Class BlockVisual
     Private Function IsInteractive(source As Object) As Boolean
         Dim current = TryCast(source, DependencyObject)
         While current IsNot Nothing
-            If TypeOf current Is TextBox OrElse TypeOf current Is ComboBox OrElse TypeOf current Is Button Then Return True
+            If TypeOf current Is TextBox OrElse TypeOf current Is ComboBox OrElse TypeOf current Is ComboBoxItem OrElse TypeOf current Is ListBoxItem OrElse TypeOf current Is Popup OrElse TypeOf current Is Button Then Return True
             current = VisualTreeHelper.GetParent(current)
         End While
         Return False

@@ -38,6 +38,12 @@ Public Class App
                 IO.Directory.CreateDirectory(exportPath)
                 Dim templateZip = IO.Path.Combine(AppContext.BaseDirectory, "EngineTemplate.zip")
                 Dim result = SolutionExportService.ExportSolution(Session.Project, exportPath, Session.Project.Name, templateZip, Session.ProjectDirectory)
+                For Each file In result.Files
+                    If file.EndsWith(".slnx", StringComparison.OrdinalIgnoreCase) Then
+                        BuildAndRunService.LastSolutionPath = file
+                        Exit For
+                    End If
+                Next
                 IO.File.WriteAllText(IO.Path.Combine(exportPath, ".export-ok"), String.Join(Environment.NewLine, result.Files))
             Catch ex As Exception
                 Try

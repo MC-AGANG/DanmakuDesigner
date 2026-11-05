@@ -80,6 +80,8 @@
                                     <MenuItem Header="播放 / 暂停预览" InputGestureText="F5" Click="PlayPause_Click" />
                                     <MenuItem Header="从头播放" InputGestureText="F6" Click="RestartPreview_Click" />
                                     <MenuItem Header="停止并回到开头" InputGestureText="Shift+F5" Click="StopPreview_Click" />
+                                    <Separator />
+                                    <MenuItem Header="编译并运行…" Click="BuildAndRun_Click" />
                                 </MenuItem>
                                 <MenuItem Header="帮助(H)" Style="{StaticResource VS.TopMenuItem}">
                                     <MenuItem Header="快捷键与操作说明" Click="Help_Click" />

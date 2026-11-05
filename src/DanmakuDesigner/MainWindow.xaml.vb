@@ -699,6 +699,33 @@ Public Class MainWindow
         End If
     End Sub
 
+    Private Sub BuildAndRun_Click(sender As Object, e As RoutedEventArgs)
+        Dim solutionPath = BuildAndRunService.LastSolutionPath
+        If String.IsNullOrWhiteSpace(solutionPath) OrElse Not IO.File.Exists(solutionPath) Then
+            Dim dialog As New Microsoft.Win32.OpenFileDialog With {
+                .Title = "选择要编译并运行的解决方案",
+                .Filter = "解决方案 (*.slnx;*.sln)|*.slnx;*.sln|所有文件 (*.*)|*.*"
+            }
+            If Not String.IsNullOrWhiteSpace(solutionPath) Then
+                Dim folder = IO.Path.GetDirectoryName(solutionPath)
+                If IO.Directory.Exists(folder) Then dialog.InitialDirectory = folder
+            End If
+            If dialog.ShowDialog() <> True Then Return
+            solutionPath = dialog.FileName
+        End If
+        If Not BuildAndRunService.EnsureDotNet10Sdk(Me) Then Return
+        Mouse.OverrideCursor = Cursors.Wait
+        Try
+            Dim result = BuildAndRunService.CompileAndRun(solutionPath, Me)
+            If result.Success Then
+                StatusLeftText.Text = "已编译并运行：" & IO.Path.GetFileName(result.ExePath)
+                _session.AddLog(IssueSeverity.Info, "已编译并运行：" & result.ExePath)
+            End If
+        Finally
+            Mouse.OverrideCursor = Nothing
+        End Try
+    End Sub
+
     Private Sub Exit_Click(sender As Object, e As RoutedEventArgs)
         Close()
     End Sub
@@ -877,7 +904,9 @@ Public Class MainWindow
             "  · 预览工具栏勾选「引擎」后，AgSTG STG 控件直接运行当前关卡" & vbCrLf &
             "  · 方向键移动自机，Shift 低速，R 重新开始" & vbCrLf & vbCrLf &
             "导出" & vbCrLf &
-            "  · Ctrl+E 导出完整 AgSTG 解决方案；会解压内置引擎并替换关卡与 TH07 资源包。",
+            "  · Ctrl+E 导出完整 AgSTG 解决方案；会解压内置引擎并替换关卡与 TH07 资源包。" & vbCrLf &
+            "  · 导出后可选择立即编译；需要 .NET 10 SDK" & vbCrLf &
+            "  · 运行 → 编译并运行… 可编译上次导出的解决方案并启动 exe。",
             "快捷键与操作说明", MessageBoxButton.OK, MessageBoxImage.Information)
     End Sub
 

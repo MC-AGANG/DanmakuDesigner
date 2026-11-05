@@ -2,6 +2,7 @@ Imports System.IO
 Imports System.Windows
 Imports System.Windows.Controls
 Imports System.Windows.Media
+Imports System.Windows.Media.Effects
 Imports System.Windows.Media.Imaging
 Imports System.Windows.Media.Media3D
 Imports System.Windows.Shapes
@@ -144,6 +145,7 @@ Public Module BackgroundRenderer
             group.Children.Add(BuildModel(mesh, String.Equals(mesh.Id, selectedMeshId, StringComparison.Ordinal)))
         Next
         view.Children.Add(New ModelVisual3D With {.Content = group})
+        ApplyBlur(view, layer)
         Return view
     End Function
 
@@ -157,7 +159,8 @@ Public Module BackgroundRenderer
             }
             Dim count = Math.Min(400, Math.Max(0, layer.ParticleCount))
             Dim rnd As New Random(Math.Abs(layer.Id.GetHashCode()))
-            Dim brush = Ui.Brush(layer.ParticleColor)
+            Dim particleImage = TryLoadResourceImage(layer.ParticleImageResourceId)
+            Dim brush As Brush = If(particleImage IsNot Nothing, New ImageBrush(particleImage) With {.Stretch = Stretch.Fill}, Ui.Brush(layer.ParticleColor))
             For i = 1 To count
                 Dim size = layer.ParticleMinSize + rnd.NextDouble() * Math.Max(0, layer.ParticleMaxSize - layer.ParticleMinSize)
                 Dim dot As New Ellipse With {.Width = size, .Height = size, .Fill = brush}
@@ -165,6 +168,7 @@ Public Module BackgroundRenderer
                 Canvas.SetTop(dot, rnd.NextDouble() * height)
                 canvas.Children.Add(dot)
             Next
+            ApplyBlur(canvas, layer)
             Return canvas
         End If
 
@@ -196,8 +200,15 @@ Public Module BackgroundRenderer
         element.RenderTransform = transforms
         Canvas.SetLeft(element, layer.X + anim.MoveX)
         Canvas.SetTop(element, layer.Y + anim.MoveY)
+        ApplyBlur(element, layer)
         Return element
     End Function
+
+    Private Sub ApplyBlur(element As FrameworkElement, layer As BackgroundLayer)
+        If element IsNot Nothing AndAlso layer IsNot Nothing AndAlso layer.BlurRadius > 0 Then
+            element.Effect = New BlurEffect With {.Radius = Math.Min(100, layer.BlurRadius)}
+        End If
+    End Sub
 
     Private Function BuildModel(mesh As BackgroundMesh, selected As Boolean) As GeometryModel3D
         Dim data = BackgroundGeometry.Build(mesh)

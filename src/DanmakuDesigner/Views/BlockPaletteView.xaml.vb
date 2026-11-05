@@ -1,4 +1,4 @@
-﻿Imports System.Windows
+Imports System.Windows
 Imports System.Windows.Controls
 Imports DanmakuDesigner.Core
 
@@ -25,11 +25,12 @@ Public Class BlockPaletteView
             AddEmptyState()
             Return
         End If
-        ContextText.Text = If(context.Scope = ProgramScope.Enemy, "敌机行为", "子弹行为")
+        ContextText.Text = If(context.Scope = ProgramScope.Enemy, "敌机行为",
+                              If(context.Scope = ProgramScope.Particle, "粒子行为", "子弹行为"))
         Dim filter = If(SearchBox.Text, "").Trim()
         Dim any = False
 
-        Dim eventDefs = BlockRegistry.Palette(BlockCategory.Trigger, context.Scope, True).Where(Function(d) Matches(d, filter)).ToList()
+        Dim eventDefs = BlockRegistry.Palette(BlockCategory.Trigger, context.Scope, True, context.IsBoss, context.ParticleIs3D).Where(Function(d) Matches(d, filter)).ToList()
         If eventDefs.Count > 0 Then
             PaletteHost.Children.Add(GroupHeader("事件积木", "脚本的开头", "#C792EA", "拖入画布会创建新脚本"))
             For Each def In eventDefs
@@ -38,7 +39,7 @@ Public Class BlockPaletteView
             any = True
         End If
 
-        Dim motionDefs = BlockRegistry.Palette(BlockCategory.Motion, context.Scope, False).Where(Function(d) Matches(d, filter)).ToList()
+        Dim motionDefs = BlockRegistry.Palette(BlockCategory.Motion, context.Scope, False, context.IsBoss, context.ParticleIs3D).Where(Function(d) Matches(d, filter)).ToList()
         If motionDefs.Count > 0 Then
             PaletteHost.Children.Add(GroupHeader("运动", "速度 / 方向 / 位置", "#4FC1FF", Nothing))
             For Each def In motionDefs
@@ -47,7 +48,7 @@ Public Class BlockPaletteView
             any = True
         End If
 
-        Dim attackDefs = BlockRegistry.Palette(BlockCategory.Attack, context.Scope, False).Where(Function(d) Matches(d, filter)).ToList()
+        Dim attackDefs = BlockRegistry.Palette(BlockCategory.Attack, context.Scope, False, context.IsBoss, context.ParticleIs3D).Where(Function(d) Matches(d, filter)).ToList()
         If attackDefs.Count > 0 Then
             PaletteHost.Children.Add(GroupHeader("攻击 / 演出", "弹幕、激光、音效", "#F48771", Nothing))
             For Each def In attackDefs
@@ -56,10 +57,19 @@ Public Class BlockPaletteView
             any = True
         End If
 
-        Dim controlDefs = BlockRegistry.Palette(BlockCategory.Control, context.Scope, False).Where(Function(d) Matches(d, filter)).ToList()
+        Dim controlDefs = BlockRegistry.Palette(BlockCategory.Control, context.Scope, False, context.IsBoss, context.ParticleIs3D).Where(Function(d) Matches(d, filter)).ToList()
         If controlDefs.Count > 0 Then
             PaletteHost.Children.Add(GroupHeader("控制 / 变量", "条件、循环、等待", "#E2C08D", Nothing))
             For Each def In controlDefs
+                PaletteHost.Children.Add(MakePaletteItem(def))
+            Next
+            any = True
+        End If
+
+        Dim particleDefs = BlockRegistry.Palette(BlockCategory.Particle, context.Scope, False, context.IsBoss, context.ParticleIs3D).Where(Function(d) Matches(d, filter)).ToList()
+        If particleDefs.Count > 0 Then
+            PaletteHost.Children.Add(GroupHeader("粒子", "速度、位置、尺寸、颜色", "#9CDCFE", Nothing))
+            For Each def In particleDefs
                 PaletteHost.Children.Add(MakePaletteItem(def))
             Next
             any = True

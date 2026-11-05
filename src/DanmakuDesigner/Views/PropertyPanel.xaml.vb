@@ -198,10 +198,12 @@ Public Class PropertyPanel
                                        If(track.Kind = TrackKind.Cue, "Timer_16x.png", If(track.Kind = TrackKind.Background, "Media_16x.png", "Bug_16x.png")),
                                        TimeSpan.FromSeconds(clip.StartTick / 60.0).ToString("m\:ss\.ff") & " → " & TimeSpan.FromSeconds(clipEnd / 60.0).ToString("m\:ss\.ff")))
 
-        Host.Children.Add(NumberRow("开始（帧）", clip.StartTick, Sub(value)
-                                                                   clip.StartTick = Math.Max(0, CInt(value))
-                                                                   track.Normalize()
-                                                               End Sub, "Tick " & clip.StartTick))
+        If Not (track.Kind = TrackKind.Background AndAlso clip.IsLoopEvent) Then
+            Host.Children.Add(NumberRow("开始（帧）", clip.StartTick, Sub(value)
+                                                                       clip.StartTick = Math.Max(0, CInt(value))
+                                                                       track.Normalize()
+                                                                   End Sub, "Tick " & clip.StartTick))
+        End If
         Host.Children.Add(ReadOnlyRow("开始时间", TimeSpan.FromSeconds(clip.StartTick / 60.0).ToString("m\:ss\.ff")))
 
         If track.Kind = TrackKind.Cue Then
@@ -226,30 +228,60 @@ Public Class PropertyPanel
             End If
             Host.Children.Add(NumberRow("震动帧数", clip.CueValue, Sub(value) clip.CueValue = Math.Max(0, CInt(value)), "仅屏幕震动事件使用"))
         ElseIf track.Kind = TrackKind.Background Then
-            Dim layer = App.Session.Stage.FindBackgroundLayer(track.BackgroundLayerId)
-            Host.Children.Add(ReadOnlyRow("目标图层", If(layer Is Nothing, "（未绑定）", layer.Name)))
-            If layer IsNot Nothing AndAlso layer.Kind = BackgroundLayerKind.Layer3D Then
-                Host.Children.Add(Ui.SectionTitle("摄像机关键帧"))
-                Host.Children.Add(MakeButton("选择视角…", "VS.AccentButton", Sub() OpenCameraView(clip, layer)))
-                Host.Children.Add(NumberRow("摄像机 X", clip.CameraX, Sub(value) clip.CameraX = value))
-                Host.Children.Add(NumberRow("摄像机 Y", clip.CameraY, Sub(value) clip.CameraY = value))
-                Host.Children.Add(NumberRow("摄像机 Z", clip.CameraZ, Sub(value) clip.CameraZ = value))
-                Host.Children.Add(NumberRow("朝向 X", clip.CameraLookX, Sub(value) clip.CameraLookX = value))
-                Host.Children.Add(NumberRow("朝向 Y", clip.CameraLookY, Sub(value) clip.CameraLookY = value))
-                Host.Children.Add(NumberRow("朝向 Z", clip.CameraLookZ, Sub(value) clip.CameraLookZ = value))
-                Host.Children.Add(NumberRow("视野 FOV", clip.CameraFieldOfView, Sub(value) clip.CameraFieldOfView = Math.Max(1, Math.Min(170, value))))
+            Dim clipTypes As New List(Of ChoiceInfo) From {
+                New ChoiceInfo("keyframe", "关键帧事件"),
+                New ChoiceInfo("loop", "循环事件")
+            }
+            Host.Children.Add(ComboRow("类型", clipTypes, If(clip.IsLoopEvent, "loop", "keyframe"),
+                                       Sub(value) ChangeBackgroundClipType(clip, track, value)))
+            If clip.IsLoopEvent Then
+                Host.Children.Add(Ui.SectionTitle("循环事件"))
+                Host.Children.Add(NumberRow("事件帧", clip.StartTick, Sub(value)
+                                                                              Dim previous = clip.StartTick
+                                                                              clip.StartTick = Math.Max(0, CInt(value))
+                                                                              If Not ValidateLoopClip(clip, track) Then clip.StartTick = previous
+                                                                          End Sub, "循环事件发生的时间点"))
+                Host.Children.Add(NumberRow("循环起始帧", clip.LoopStartTick, Sub(value)
+                                                                                Dim previous = clip.LoopStartTick
+                                                                                clip.LoopStartTick = Math.Max(0, CInt(value))
+                                                                                If Not ValidateLoopClip(clip, track) Then clip.LoopStartTick = previous
+                                                                            End Sub, "必须早于事件帧"))
+                Host.Children.Add(NumberRow("循环结束帧", clip.LoopEndTick, Sub(value)
+                                                                              Dim previous = clip.LoopEndTick
+                                                                              clip.LoopEndTick = Math.Max(0, CInt(value))
+                                                                              If Not ValidateLoopClip(clip, track) Then clip.LoopEndTick = previous
+                                                                          End Sub, "必须早于事件帧"))
+                Host.Children.Add(NumberRow("循环长度（帧）", clip.LoopLength, Sub(value)
+                                                                                 clip.LoopLength = Math.Max(1, CInt(value))
+                                                                                 ValidateLoopClip(clip, track)
+                                                                             End Sub, "时间轴上片段的宽度"))
+                Host.Children.Add(ReadOnlyRow("循环区间", clip.LoopStartTick & " → " & clip.LoopEndTick & "（" & Math.Max(0, clip.LoopEndTick - clip.LoopStartTick + 1) & " 帧）"))
             Else
-                Host.Children.Add(Ui.SectionTitle("2D / 粒子关键帧"))
-                If layer IsNot Nothing AndAlso layer.Shape = BackgroundShape2D.ParticleField Then
-                    Host.Children.Add(NumberRow("粒子速度 X", clip.ParticleSpeedX, Sub(value) clip.ParticleSpeedX = value))
-                    Host.Children.Add(NumberRow("粒子速度 Y", clip.ParticleSpeedY, Sub(value) clip.ParticleSpeedY = value))
-                    Host.Children.Add(NumberRow("不透明度", clip.TargetOpacity, Sub(value) clip.TargetOpacity = Math.Max(0, Math.Min(1, value))))
+                Dim layer = App.Session.Stage.FindBackgroundLayer(track.BackgroundLayerId)
+                Host.Children.Add(ReadOnlyRow("目标图层", If(layer Is Nothing, "（未绑定）", layer.Name)))
+                If layer IsNot Nothing AndAlso layer.Kind = BackgroundLayerKind.Layer3D Then
+                    Host.Children.Add(Ui.SectionTitle("摄像机关键帧"))
+                    Host.Children.Add(MakeButton("选择视角…", "VS.AccentButton", Sub() OpenCameraView(clip, layer)))
+                    Host.Children.Add(NumberRow("摄像机 X", clip.CameraX, Sub(value) clip.CameraX = value))
+                    Host.Children.Add(NumberRow("摄像机 Y", clip.CameraY, Sub(value) clip.CameraY = value))
+                    Host.Children.Add(NumberRow("摄像机 Z", clip.CameraZ, Sub(value) clip.CameraZ = value))
+                    Host.Children.Add(NumberRow("朝向 X", clip.CameraLookX, Sub(value) clip.CameraLookX = value))
+                    Host.Children.Add(NumberRow("朝向 Y", clip.CameraLookY, Sub(value) clip.CameraLookY = value))
+                    Host.Children.Add(NumberRow("朝向 Z", clip.CameraLookZ, Sub(value) clip.CameraLookZ = value))
+                    Host.Children.Add(NumberRow("视野 FOV", clip.CameraFieldOfView, Sub(value) clip.CameraFieldOfView = Math.Max(1, Math.Min(170, value))))
                 Else
-                    Host.Children.Add(NumberRow("X", clip.TargetX, Sub(value) clip.TargetX = value))
-                    Host.Children.Add(NumberRow("Y", clip.TargetY, Sub(value) clip.TargetY = value))
-                    Host.Children.Add(NumberRow("缩放", clip.TargetScale, Sub(value) clip.TargetScale = Math.Max(0.01, value)))
-                    Host.Children.Add(NumberRow("旋转°", clip.TargetRotation, Sub(value) clip.TargetRotation = value))
-                    Host.Children.Add(NumberRow("不透明度", clip.TargetOpacity, Sub(value) clip.TargetOpacity = Math.Max(0, Math.Min(1, value))))
+                    Host.Children.Add(Ui.SectionTitle("2D / 粒子关键帧"))
+                    If layer IsNot Nothing AndAlso layer.Shape = BackgroundShape2D.ParticleField Then
+                        Host.Children.Add(NumberRow("粒子速度 X", clip.ParticleSpeedX, Sub(value) clip.ParticleSpeedX = value))
+                        Host.Children.Add(NumberRow("粒子速度 Y", clip.ParticleSpeedY, Sub(value) clip.ParticleSpeedY = value))
+                        Host.Children.Add(NumberRow("不透明度", clip.TargetOpacity, Sub(value) clip.TargetOpacity = Math.Max(0, Math.Min(1, value))))
+                    Else
+                        Host.Children.Add(NumberRow("X", clip.TargetX, Sub(value) clip.TargetX = value))
+                        Host.Children.Add(NumberRow("Y", clip.TargetY, Sub(value) clip.TargetY = value))
+                        Host.Children.Add(NumberRow("缩放", clip.TargetScale, Sub(value) clip.TargetScale = Math.Max(0.01, value)))
+                        Host.Children.Add(NumberRow("旋转°", clip.TargetRotation, Sub(value) clip.TargetRotation = value))
+                        Host.Children.Add(NumberRow("不透明度", clip.TargetOpacity, Sub(value) clip.TargetOpacity = Math.Max(0, Math.Min(1, value))))
+                    End If
                 End If
             End If
         Else
@@ -275,7 +307,11 @@ Public Class PropertyPanel
         End If
 
         If track.Kind = TrackKind.Background Then
-            Host.Children.Add(ReadOnlyRow("关键帧", clip.StartTick.ToString() & " 帧"))
+            If clip.IsLoopEvent Then
+                Host.Children.Add(ReadOnlyRow("事件类型", "背景循环"))
+            Else
+                Host.Children.Add(ReadOnlyRow("关键帧", clip.StartTick.ToString() & " 帧"))
+            End If
         Else
             Host.Children.Add(ReadOnlyRow("已存在", (clip.EndTick - clip.StartTick).ToString() & " 帧"))
         End If
@@ -311,6 +347,73 @@ Public Class PropertyPanel
             End Try
         End If
     End Sub
+
+    Private Sub ChangeBackgroundClipType(clip As TimelineClip, track As TimelineTrack, value As String)
+        Dim wantsLoop = String.Equals(value, "loop", StringComparison.OrdinalIgnoreCase)
+        If wantsLoop = clip.IsLoopEvent Then Return
+        If wantsLoop Then
+            If Not InitializeLoopClip(clip, track) Then Return
+        End If
+        clip.IsLoopEvent = wantsLoop
+    End Sub
+
+    Private Function InitializeLoopClip(clip As TimelineClip, track As TimelineTrack) As Boolean
+        If clip.StartTick <= 1 Then
+            MessageBox.Show(Window.GetWindow(Me), "请先把事件帧移动到第 2 帧之后，再切换为循环事件。", "循环事件校验", MessageBoxButton.OK, MessageBoxImage.Warning)
+            Return False
+        End If
+        Dim loopStart = Math.Max(0, clip.StartTick - 120)
+        Dim loopEnd = clip.StartTick - 1
+        For Each otherTrack In App.Session.Stage.Tracks
+            If otherTrack Is Nothing OrElse otherTrack.Kind <> TrackKind.Background Then Continue For
+            For Each other In otherTrack.Clips
+                If other Is Nothing OrElse other Is clip OrElse Not other.IsLoopEvent Then Continue For
+                If other.StartTick >= loopStart AndAlso other.StartTick <= loopEnd Then
+                    loopEnd = Math.Min(loopEnd, other.StartTick - 1)
+                End If
+            Next
+        Next
+        If loopEnd <= loopStart Then
+            MessageBox.Show(Window.GetWindow(Me), "这个事件帧之前没有可用的循环区间；请先移动或删除区间内的循环事件。", "循环事件校验", MessageBoxButton.OK, MessageBoxImage.Warning)
+            Return False
+        End If
+        clip.LoopStartTick = loopStart
+        clip.LoopEndTick = loopEnd
+        clip.LoopLength = Math.Max(1, Math.Min(120, loopEnd - loopStart + 1))
+        Return True
+    End Function
+
+    Private Function ValidateLoopClip(clip As TimelineClip, track As TimelineTrack) As Boolean
+        If clip Is Nothing OrElse track Is Nothing OrElse Not clip.IsLoopEvent Then Return True
+        Dim message As String = Nothing
+        If clip.LoopStartTick > clip.LoopEndTick Then
+            message = "循环起始帧不能大于循环结束帧。"
+        ElseIf clip.StartTick <= 0 Then
+            message = "循环事件帧必须大于 0。"
+        ElseIf clip.LoopStartTick >= clip.StartTick OrElse clip.LoopEndTick >= clip.StartTick Then
+            message = "循环起始帧和结束帧都必须早于循环事件帧。"
+        ElseIf clip.LoopLength < 1 Then
+            message = "循环长度必须至少为 1 帧。"
+        Else
+            Dim stage = App.Session.Stage
+            If stage IsNot Nothing Then
+                For Each otherTrack In stage.Tracks
+                    If otherTrack Is Nothing OrElse otherTrack.Kind <> TrackKind.Background Then Continue For
+                    For Each other In otherTrack.Clips
+                        If other Is Nothing OrElse other Is clip OrElse Not other.IsLoopEvent Then Continue For
+                        If other.StartTick >= clip.LoopStartTick AndAlso other.StartTick <= clip.LoopEndTick Then
+                            message = "循环区间内不能包含其他循环事件（事件帧 " & other.StartTick & "）。"
+                            Exit For
+                        End If
+                    Next
+                    If message IsNot Nothing Then Exit For
+                Next
+            End If
+        End If
+        If message Is Nothing Then Return True
+        MessageBox.Show(Window.GetWindow(Me), message, "循环事件校验", MessageBoxButton.OK, MessageBoxImage.Warning)
+        Return False
+    End Function
 
     Private Sub DeleteClip(clip As TimelineClip)
         Dim track = App.Session.Stage.TrackOfClip(clip)

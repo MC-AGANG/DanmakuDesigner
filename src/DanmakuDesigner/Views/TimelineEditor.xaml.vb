@@ -496,6 +496,7 @@ Public Class TimelineEditor
 
     Private Function ClipWidth(track As TimelineTrack, tlClip As TimelineClip) As Double
         If track IsNot Nothing AndAlso track.Kind = TrackKind.Background Then
+            If tlClip IsNot Nothing AndAlso tlClip.IsLoopEvent Then Return Math.Max(126, Math.Max(1, tlClip.LoopLength) * _px + 28)
             Return Math.Max(90, Math.Max(1, tlClip.AnimationLength) * _px + 34)
         End If
         If tlClip.Count <= 1 Then Return 90
@@ -503,6 +504,7 @@ Public Class TimelineEditor
     End Function
 
     Private Function CreateBackgroundKeyframe(track As TimelineTrack, tlClip As TimelineClip, trackIndex As Integer) As ClipUi
+        If tlClip.IsLoopEvent Then Return CreateLoopEvent(track, tlClip, trackIndex)
         Dim accent = track.Accent
         Dim border As New Border With {
             .Width = 126,
@@ -558,6 +560,82 @@ Public Class TimelineEditor
         AddHandler border.MouseRightButtonDown, Sub(sender As Object, e As MouseButtonEventArgs) Clip_RightClick(clipUi, e)
         AddHandler border.MouseEnter, Sub() diamond.BorderBrush = Ui.Brush("#FFFFFF")
         AddHandler border.MouseLeave, Sub() diamond.BorderBrush = Ui.Brush("#F2F2F2")
+        Return clipUi
+    End Function
+
+    Private Function CreateLoopEvent(track As TimelineTrack, tlClip As TimelineClip, trackIndex As Integer) As ClipUi
+        Dim accent = track.Accent
+        Dim width = Math.Max(126, Math.Max(1, tlClip.LoopLength) * _px + 28)
+        Dim border As New Border With {
+            .Width = width,
+            .Height = RowHeight - 14,
+            .Background = Ui.Brush(AccentFill(accent, 95)),
+            .BorderBrush = Ui.Brush(accent),
+            .BorderThickness = New Thickness(1),
+            .CornerRadius = New CornerRadius(3),
+            .Cursor = Cursors.Hand,
+            .Tag = tlClip,
+            .Padding = New Thickness(0),
+            .ToolTip = ClipTooltip(track, tlClip)
+        }
+        Canvas.SetLeft(border, tlClip.StartTick * _px)
+        Canvas.SetTop(border, trackIndex * RowHeight + 7)
+
+        Dim grid As New Grid()
+        grid.ColumnDefinitions.Add(New ColumnDefinition With {.Width = New GridLength(4)})
+        grid.ColumnDefinitions.Add(New ColumnDefinition With {.Width = New GridLength(26)})
+        grid.ColumnDefinitions.Add(New ColumnDefinition With {.Width = New GridLength(1, GridUnitType.Star)})
+        Dim bar As New Border With {
+            .Background = Ui.Brush(accent),
+            .CornerRadius = New CornerRadius(2, 0, 0, 2)
+        }
+        grid.Children.Add(bar)
+        Dim glyph As New TextBlock With {
+            .Text = "↻",
+            .FontSize = 15,
+            .FontWeight = FontWeights.SemiBold,
+            .Foreground = Ui.Brush("#F2F2F2"),
+            .HorizontalAlignment = HorizontalAlignment.Center,
+            .VerticalAlignment = VerticalAlignment.Center
+        }
+        Grid.SetColumn(glyph, 1)
+        grid.Children.Add(glyph)
+        Dim panel As New StackPanel With {.Margin = New Thickness(4, 0, 6, 0), .VerticalAlignment = VerticalAlignment.Center}
+        Dim title As New TextBlock With {
+            .Text = ClipTitle(track, tlClip),
+            .FontSize = 10.5,
+            .FontWeight = FontWeights.SemiBold,
+            .Foreground = Ui.Brush("#F2F2F2"),
+            .TextTrimming = TextTrimming.CharacterEllipsis
+        }
+        Dim subtitle As New TextBlock With {
+            .Text = ClipSubtitle(track, tlClip),
+            .FontSize = 9,
+            .Foreground = Ui.Brush("#D8D8D8"),
+            .Opacity = 0.86,
+            .TextTrimming = TextTrimming.CharacterEllipsis
+        }
+        panel.Children.Add(title)
+        panel.Children.Add(subtitle)
+        Grid.SetColumn(panel, 2)
+        grid.Children.Add(panel)
+        border.Child = grid
+
+        Dim clipUi As New ClipUi With {
+            .Clip = tlClip,
+            .Track = track,
+            .Border = border,
+            .Title = title,
+            .Subtitle = subtitle,
+            .OffsetX = 0,
+            .IsKeyframe = False
+        }
+        AddHandler border.MouseLeftButtonDown, Sub(sender As Object, e As MouseButtonEventArgs) Clip_MouseDown(clipUi, e)
+        AddHandler border.MouseMove, Sub(sender As Object, e As MouseEventArgs) Clip_MouseMove(clipUi, e)
+        AddHandler border.MouseLeftButtonUp, Sub(sender As Object, e As MouseButtonEventArgs) Clip_MouseUp(clipUi, e)
+        AddHandler border.MouseRightButtonDown, Sub(sender As Object, e As MouseButtonEventArgs) Clip_RightClick(clipUi, e)
+        AddHandler border.MouseEnter, Sub() If _selectedClip IsNot tlClip Then border.Background = Ui.Brush(AccentFill(accent, 130))
+        AddHandler border.MouseLeave, Sub() If _selectedClip IsNot tlClip Then border.Background = Ui.Brush(AccentFill(accent, 95))
         Return clipUi
     End Function
 
@@ -625,6 +703,7 @@ Public Class TimelineEditor
             End Select
         End If
         If track.Kind = TrackKind.Background Then
+            If tlClip.IsLoopEvent Then Return "循环 " & tlClip.LoopStartTick & "→" & tlClip.LoopEndTick
             Dim layer = App.Session.Stage.FindBackgroundLayer(track.BackgroundLayerId)
             Return If(layer Is Nothing, "关键帧 " & tlClip.StartTick & "f", tlClip.StartTick & "f")
         End If
@@ -637,6 +716,7 @@ Public Class TimelineEditor
             Return TimeSpan.FromSeconds(tlClip.StartTick / 60.0).ToString("m\:ss") & " · Tick " & tlClip.StartTick
         End If
         If track.Kind = TrackKind.Background Then
+            If tlClip.IsLoopEvent Then Return "循环长度 " & tlClip.LoopLength & "f · 事件 " & tlClip.StartTick & "f"
             Return TimeSpan.FromSeconds(tlClip.StartTick / 60.0).ToString("m\:ss\.ff") & " · 关键帧"
         End If
         Dim parts As New List(Of String)
@@ -669,6 +749,12 @@ Public Class TimelineEditor
                    "双击编辑属性"
         End If
         If track.Kind = TrackKind.Background Then
+            If tlClip.IsLoopEvent Then
+                Return "背景循环事件" & vbCrLf &
+                       "事件 Tick " & tlClip.StartTick & " · 循环 " & tlClip.LoopStartTick & " → " & tlClip.LoopEndTick & vbCrLf &
+                       "循环长度 " & tlClip.LoopLength & " 帧" & vbCrLf &
+                       "双击编辑属性"
+            End If
             Dim layer = App.Session.Stage.FindBackgroundLayer(track.BackgroundLayerId)
             Dim detail As String
             If layer IsNot Nothing AndAlso layer.Kind = BackgroundLayerKind.Layer3D Then
@@ -754,7 +840,12 @@ Public Class TimelineEditor
             ElseIf clipUi.Track.Kind = TrackKind.Background Then
                 App.Session.SelectItem(clipUi.Clip)
                 Dim main = TryCast(Window.GetWindow(Me), MainWindow)
-                If main IsNot Nothing Then
+                If clipUi.Clip.IsLoopEvent Then
+                    If main IsNot Nothing Then
+                        App.Session.SetView("timeline")
+                        main.FocusProperties()
+                    End If
+                ElseIf main IsNot Nothing Then
                     App.Session.SetView("background")
                     main.BackgroundEditorView.SelectLayer(clipUi.Track.BackgroundLayerId)
                 End If
@@ -918,6 +1009,9 @@ Public Class TimelineEditor
         SetPlayhead(tick)
         Dim menu As New ContextMenu()
         menu.Items.Add(MakeMenuItem("在此添加片段", Sub() AddClipAt(track, tick)))
+        If track.Kind = TrackKind.Background Then
+            menu.Items.Add(MakeMenuItem("在此添加循环事件", Sub() AddLoopEventAt(track, tick)))
+        End If
         menu.Items.Add(MakeMenuItem("添加敌机轨道…", Sub() ShowAddTrackMenu(AddTrackButton)))
         menu.Items.Add(MakeMenuItem("添加事件轨道", Sub() AddEventTrack()))
         If App.Session.Stage.BackgroundLayers.Count > 0 Then
@@ -966,6 +1060,7 @@ Public Class TimelineEditor
                                                            Dim main = TryCast(Window.GetWindow(Me), MainWindow)
                                                            If main IsNot Nothing Then main.BackgroundEditorView.SelectLayer(track.BackgroundLayerId)
                                                        End Sub))
+            menu.Items.Add(MakeMenuItem("在播放头添加循环事件", Sub() AddLoopEventAt(track, CInt(_playhead))))
         End If
         menu.Items.Add(New Separator())
         menu.Items.Add(MakeMenuItem(If(track.IsMuted, "取消静音", "静音轨道"), Sub() ToggleTrackFlag(track, True)))
@@ -1096,6 +1191,47 @@ Public Class TimelineEditor
         App.Session.SelectItem(tlClip)
         Refresh()
         UpdateSelectionVisuals()
+    End Sub
+
+    Private Sub AddLoopEventAt(track As TimelineTrack, tick As Integer)
+        If track Is Nothing OrElse track.Kind <> TrackKind.Background Then Return
+        If tick < 2 Then
+            MessageBox.Show(Window.GetWindow(Me), "循环事件前至少要留出 1 帧的循环区间。", "循环事件", MessageBoxButton.OK, MessageBoxImage.Information)
+            Return
+        End If
+        tick = SnapTick(Math.Max(2, tick))
+        Dim loopStart = Math.Max(0, tick - 120)
+        Dim loopEnd = tick - 1
+        For Each otherTrack In App.Session.Stage.Tracks
+            If otherTrack Is Nothing OrElse otherTrack.Kind <> TrackKind.Background Then Continue For
+            For Each other In otherTrack.Clips
+                If other IsNot Nothing AndAlso other.IsLoopEvent AndAlso other.StartTick >= loopStart AndAlso other.StartTick <= loopEnd Then
+                    loopEnd = Math.Min(loopEnd, other.StartTick - 1)
+                End If
+            Next
+        Next
+        If loopEnd <= loopStart Then
+            MessageBox.Show(Window.GetWindow(Me), "这个位置之前没有可用的循环区间；请先移动或删除区间内的循环事件。", "循环事件", MessageBoxButton.OK, MessageBoxImage.Warning)
+            Return
+        End If
+        Dim tlClip As New TimelineClip With {
+            .StartTick = tick,
+            .IsLoopEvent = True,
+            .LoopStartTick = loopStart,
+            .LoopEndTick = loopEnd,
+            .LoopLength = Math.Max(1, Math.Min(120, loopEnd - loopStart + 1))
+        }
+        App.Session.BeginEdit()
+        track.Clips.Add(tlClip)
+        track.Clips.Sort(Function(a, b) a.StartTick.CompareTo(b.StartTick))
+        App.Session.CommitEdit()
+        _selectedTrack = track
+        _selectedClip = tlClip
+        App.Session.SelectItem(tlClip)
+        Refresh()
+        UpdateSelectionVisuals()
+        Dim main = TryCast(Window.GetWindow(Me), MainWindow)
+        If main IsNot Nothing Then main.FocusProperties()
     End Sub
 
     Private Sub AddTrack_Click(sender As Object, e As RoutedEventArgs)

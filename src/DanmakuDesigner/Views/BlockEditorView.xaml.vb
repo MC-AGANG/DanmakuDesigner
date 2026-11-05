@@ -67,9 +67,15 @@ Public Class BlockEditorView
 
         Scope = _context.Scope
         BreadcrumbText.Text = _context.DisplayName
-        ScopeText.Text = If(_context.IsSpell, "符卡行为", If(Scope = ProgramScope.Enemy, "敌机行为", "子弹行为"))
-        ScopeBadge.Background = Ui.Brush(If(_context.IsSpell, "#4A2C1A", If(Scope = ProgramScope.Enemy, "#3A2C4A", "#12384A")))
-        ScopeText.Foreground = Ui.Brush(If(_context.IsSpell, "#F48771", If(Scope = ProgramScope.Enemy, "#C792EA", "#4FC1FF")))
+        ScopeText.Text = If(_context.IsSpell, "符卡行为",
+                            If(Scope = ProgramScope.Enemy, "敌机行为",
+                               If(Scope = ProgramScope.Particle, "粒子行为", "子弹行为")))
+        ScopeBadge.Background = Ui.Brush(If(_context.IsSpell, "#4A2C1A",
+                                            If(Scope = ProgramScope.Enemy, "#3A2C4A",
+                                               If(Scope = ProgramScope.Particle, "#123A3A", "#12384A"))))
+        ScopeText.Foreground = Ui.Brush(If(_context.IsSpell, "#F48771",
+                                           If(Scope = ProgramScope.Enemy, "#C792EA",
+                                              If(Scope = ProgramScope.Particle, "#9CDCFE", "#4FC1FF"))))
 
         Dim program = _context.Program
         If program Is Nothing Then Return
@@ -298,7 +304,8 @@ Public Class BlockEditorView
     Private Sub AddBlockToLastScript(def As BlockDefinition)
         If _context Is Nothing OrElse def Is Nothing Then Return
         If _context.Program.Scripts.Count = 0 Then
-            Dim hat = BlockRegistry.CreateBlock("every_frame", App.Session.Stage)
+            Dim hatType = If(_context.Scope = ProgramScope.Particle, "particle_every_frame", "every_frame")
+            Dim hat = BlockRegistry.CreateBlock(hatType, App.Session.Stage)
             App.Session.BeginEdit()
             _context.Program.Scripts.Add(hat)
             App.Session.CommitEdit()
@@ -424,7 +431,7 @@ Public Class BlockEditorView
         Dim menu As New ContextMenu()
         Dim header As New MenuItem With {.Header = "选择事件积木", .IsEnabled = False}
         menu.Items.Add(header)
-        For Each def In BlockRegistry.ForScope(Scope).Where(Function(d) d.IsHat)
+        For Each def In BlockRegistry.ForScope(Scope, _context.IsBoss, _context.ParticleIs3D).Where(Function(d) d.IsHat)
             Dim captured = def
             Dim item As New MenuItem With {.Header = def.Title}
             AddHandler item.Click, Sub() AddScript(captured.TypeId)

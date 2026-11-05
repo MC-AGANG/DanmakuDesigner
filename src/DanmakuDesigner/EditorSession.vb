@@ -430,7 +430,7 @@ Public Class EditorSession
         IsDirty = True
         Project.Normalize()
         If BlockContext IsNot Nothing AndAlso Stage IsNot Nothing Then
-            Dim ownerExists = Stage.FindTemplate(BlockContext.OwnerId) IsNot Nothing OrElse Stage.FindPattern(BlockContext.OwnerId) IsNot Nothing OrElse Stage.FindSpell(BlockContext.OwnerId) IsNot Nothing
+            Dim ownerExists = Stage.FindTemplate(BlockContext.OwnerId) IsNot Nothing OrElse Stage.FindPattern(BlockContext.OwnerId) IsNot Nothing OrElse Stage.FindSpell(BlockContext.OwnerId) IsNot Nothing OrElse Stage.BackgroundLayers.Any(Function(l) l.Id = BlockContext.OwnerId)
             If Not ownerExists Then
                 BlockContext = Nothing
                 RaiseEvent BlockContextChanged()
@@ -542,14 +542,16 @@ Public Class EditorSession
         RaiseEvent ViewChanged()
     End Sub
 
-    Public Sub OpenBlockEditor(program As Program, scope As ProgramScope, displayName As String, ownerId As String, Optional isSpell As Boolean = False)
+    Public Sub OpenBlockEditor(program As Program, scope As ProgramScope, displayName As String, ownerId As String, Optional isSpell As Boolean = False, Optional isBoss As Boolean = False, Optional particle3D As Boolean = False)
         If program Is Nothing Then Return
         BlockContext = New BlockContext With {
             .Program = program,
             .Scope = scope,
             .DisplayName = displayName,
             .OwnerId = ownerId,
-            .IsSpell = isSpell
+            .IsSpell = isSpell,
+            .IsBoss = isBoss,
+            .ParticleIs3D = particle3D
         }
         ActiveView = "blocks"
         RaiseEvent BlockContextChanged()
@@ -559,7 +561,7 @@ Public Class EditorSession
     Public Sub EditTemplateBehavior(template As EnemyTemplate)
         If template Is Nothing OrElse template.Behavior Is Nothing Then Return
         SelectItem(template)
-        OpenBlockEditor(template.Behavior, ProgramScope.Enemy, template.Name, template.Id)
+        OpenBlockEditor(template.Behavior, ProgramScope.Enemy, template.Name, template.Id, template.IsBoss, template.IsBoss)
     End Sub
 
     Public Sub EditPatternBehavior(pattern As BulletPattern)
@@ -571,7 +573,16 @@ Public Class EditorSession
     Public Sub EditSpellBehavior(spell As BossSpellCard)
         If spell Is Nothing OrElse spell.Behavior Is Nothing Then Return
         SelectItem(spell)
-        OpenBlockEditor(spell.Behavior, ProgramScope.Enemy, spell.Name, spell.Id, True)
+        OpenBlockEditor(spell.Behavior, ProgramScope.Enemy, spell.Name, spell.Id, True, True)
+    End Sub
+
+    Public Sub EditBackgroundParticleBehavior(layer As BackgroundLayer)
+        If layer Is Nothing Then Return
+        If layer.ParticleBehavior Is Nothing Then layer.ParticleBehavior = Program.CreateEmpty()
+        If layer.ParticleMode = BackgroundParticleMode.None Then
+            layer.ParticleMode = If(layer.Kind = BackgroundLayerKind.Layer3D, BackgroundParticleMode.ThreeD, BackgroundParticleMode.TwoD)
+        End If
+        OpenBlockEditor(layer.ParticleBehavior, ProgramScope.Particle, layer.Name & " · 粒子", layer.Id, False, False, layer.ParticleMode = BackgroundParticleMode.ThreeD)
     End Sub
 
     Public Sub RebuildWorld()
@@ -660,4 +671,6 @@ Public Class BlockContext
     Public Property DisplayName As String
     Public Property OwnerId As String
     Public Property IsSpell As Boolean
+    Public Property IsBoss As Boolean
+    Public Property ParticleIs3D As Boolean
 End Class

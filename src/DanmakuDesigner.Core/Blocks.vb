@@ -10,6 +10,7 @@ Namespace Global.DanmakuDesigner.Core
         Both = 0
         EnemyOnly = 1
         BulletOnly = 2
+        ParticleOnly = 3
     End Enum
 
     Public Enum HatKind
@@ -25,6 +26,9 @@ Namespace Global.DanmakuDesigner.Core
         BossInit = 9
         SpellStart = 10
         SpellEveryFrame = 11
+        ParticleSpawn = 12
+        ParticleEveryFrame = 13
+        ParticleWhenPosition = 14
     End Enum
 
     Public NotInheritable Class FieldOption
@@ -81,6 +85,12 @@ Namespace Global.DanmakuDesigner.Core
         Public Property Category As BlockCategory = BlockCategory.Motion
         Public Property Kind As BlockKind = BlockKind.Stack
         Public Property Scope As BlockScope = BlockScope.Both
+        ''' <summary>只有 Boss 模板才显示/可用的积木。</summary>
+        Public Property RequiresBoss As Boolean = False
+        ''' <summary>只在 2D 粒子行为中显示。</summary>
+        Public Property Requires2DParticle As Boolean = False
+        ''' <summary>只在 3D 粒子行为中显示。</summary>
+        Public Property Requires3DParticle As Boolean = False
         Public Property Tooltip As String = ""
         Public Property HatKind As HatKind = HatKind.None
         Public Property Fields As New List(Of FieldDef)
@@ -105,6 +115,7 @@ Namespace Global.DanmakuDesigner.Core
                     Case BlockCategory.Motion : Return "#4FC1FF"
                     Case BlockCategory.Attack : Return "#F48771"
                     Case BlockCategory.Control : Return "#E2C08D"
+                    Case BlockCategory.Particle : Return "#9CDCFE"
                     Case Else : Return "#9CDCFE"
                 End Select
             End Get
@@ -114,7 +125,11 @@ Namespace Global.DanmakuDesigner.Core
             Return Fields.FirstOrDefault(Function(f) String.Equals(f.Key, key, StringComparison.OrdinalIgnoreCase))
         End Function
 
-        Public Function Allows(programScope As ProgramScope) As Boolean
+        Public Function Allows(programScope As ProgramScope, Optional particle3D As Boolean = False) As Boolean
+            If Requires2DParticle AndAlso particle3D Then Return False
+            If Requires3DParticle AndAlso Not particle3D Then Return False
+            If programScope = ProgramScope.Particle Then Return Me.Scope = BlockScope.ParticleOnly
+            If Me.Scope = BlockScope.ParticleOnly Then Return False
             If Me.Scope = BlockScope.Both Then Return True
             If programScope = ProgramScope.Enemy Then Return Me.Scope = BlockScope.EnemyOnly
             Return Me.Scope = BlockScope.BulletOnly
@@ -155,6 +170,7 @@ Namespace Global.DanmakuDesigner.Core
                 BuildMotion()
                 BuildAttack()
                 BuildControl()
+                BuildParticle()
                 _initialized = True
             End SyncLock
         End Sub
@@ -180,6 +196,23 @@ Namespace Global.DanmakuDesigner.Core
             New FieldOption("!=", "≠")
         }
 
+        Public ReadOnly ParticleAxes2D As IReadOnlyList(Of FieldOption) = New List(Of FieldOption) From {
+            New FieldOption("X", "X"),
+            New FieldOption("Y", "Y")
+        }
+
+        Public ReadOnly ParticleAxes3D As IReadOnlyList(Of FieldOption) = New List(Of FieldOption) From {
+            New FieldOption("X", "X"),
+            New FieldOption("Y", "Y"),
+            New FieldOption("Z", "Z")
+        }
+
+        Public ReadOnly ParticleComparisons As IReadOnlyList(Of FieldOption) = New List(Of FieldOption) From {
+            New FieldOption(">", ">"),
+            New FieldOption("=", "="),
+            New FieldOption("<", "<")
+        }
+
         Public Sub Register(def As BlockDefinition)
             _all.Add(def)
             _byId(def.TypeId) = def
@@ -198,14 +231,14 @@ Namespace Global.DanmakuDesigner.Core
             Return _all
         End Function
 
-        Public Function ForScope(scope As ProgramScope) As IEnumerable(Of BlockDefinition)
+        Public Function ForScope(scope As ProgramScope, Optional isBoss As Boolean = False, Optional particle3D As Boolean = False) As IEnumerable(Of BlockDefinition)
             EnsureBuilt()
-            Return _all.Where(Function(d) d.Allows(scope))
+            Return _all.Where(Function(d) d.Allows(scope, particle3D) AndAlso (Not d.RequiresBoss OrElse isBoss))
         End Function
 
-        Public Function Palette(category As BlockCategory, scope As ProgramScope, includeHats As Boolean) As IEnumerable(Of BlockDefinition)
+        Public Function Palette(category As BlockCategory, scope As ProgramScope, includeHats As Boolean, Optional isBoss As Boolean = False, Optional particle3D As Boolean = False) As IEnumerable(Of BlockDefinition)
             EnsureBuilt()
-            Return _all.Where(Function(d) d.Category = category AndAlso d.Allows(scope) AndAlso (d.IsHat = includeHats))
+            Return _all.Where(Function(d) d.Category = category AndAlso d.Allows(scope, particle3D) AndAlso (d.IsHat = includeHats) AndAlso (Not d.RequiresBoss OrElse isBoss))
         End Function
 
         Public Function ResolveOptions(source As String, stage As StageDocument, Optional resources As IEnumerable(Of GameResource) = Nothing) As List(Of FieldOption)
@@ -243,6 +276,12 @@ Namespace Global.DanmakuDesigner.Core
                     result.AddRange(ConditionSubjects)
                 Case "comparisons"
                     result.AddRange(Comparisons)
+                Case "particleComparisons"
+                    result.AddRange(ParticleComparisons)
+                Case "particleAxes2D"
+                    result.AddRange(ParticleAxes2D)
+                Case "particleAxes3D"
+                    result.AddRange(ParticleAxes3D)
             End Select
             Return result
         End Function
@@ -362,6 +401,7 @@ Namespace Global.DanmakuDesigner.Core
             d = Def("boss_init", "Boss 初始化", BlockCategory.Trigger, BlockKind.Hat, BlockScope.EnemyOnly, HatKind.BossInit,
                     "Boss 被初始化时执行一次；只在 Boss 模板中有效。")
             AddLabel(d, "Boss 初始化时")
+            d.RequiresBoss = True
 
             d = Def("spell_start", "当第 N 张符卡开始", BlockCategory.Trigger, BlockKind.Hat, BlockScope.EnemyOnly, HatKind.SpellStart,
                     "指定符卡阶段开始时执行一次；只在 Boss 模板中有效。")
@@ -369,6 +409,7 @@ Namespace Global.DanmakuDesigner.Core
             AddFieldPart(d, "spell")
             AddLabel(d, " 张符卡开始")
             AddField(d, "spell", FieldKind.Number, "1", 34, "", "符卡序号（从 1 开始）", 1, 64)
+            d.RequiresBoss = True
 
             d = Def("spell_every_frame", "第 N 张符卡每帧", BlockCategory.Trigger, BlockKind.Hat, BlockScope.EnemyOnly, HatKind.SpellEveryFrame,
                     "指定符卡阶段内每帧执行；只在 Boss 模板中有效。")
@@ -376,6 +417,7 @@ Namespace Global.DanmakuDesigner.Core
             AddFieldPart(d, "spell")
             AddLabel(d, " 张符卡每帧")
             AddField(d, "spell", FieldKind.Number, "1", 34, "", "符卡序号（从 1 开始）", 1, 64)
+            d.RequiresBoss = True
         End Sub
 
         Private Sub BuildMotion()
@@ -604,6 +646,7 @@ Namespace Global.DanmakuDesigner.Core
             d = Def("boss_next_spell", "进入下一张符卡", BlockCategory.Control, BlockKind.Stack, BlockScope.EnemyOnly, HatKind.None,
                     "让 Boss 进入下一张符卡；只在 Boss 模板中有效。通常放在『Boss 初始化』或符卡效果中。")
             AddLabel(d, "进入下一张符卡")
+            d.RequiresBoss = True
 
             d = Def("next_stage", "关卡结束，进入下一关", BlockCategory.Control, BlockKind.Stack, BlockScope.EnemyOnly, HatKind.None,
                     "结束当前关卡并进入下一关；适合在 Boss 被击破后使用。")
@@ -623,6 +666,108 @@ Namespace Global.DanmakuDesigner.Core
             AddFieldPart(d, "title")
             AddField(d, "music", FieldKind.Choice, "", 160, "audio", "选择游戏资源中的音频")
             AddField(d, "title", FieldKind.Text, "", 150, "", "显示曲名；留空时使用音频资源名称")
+        End Sub
+
+        Private Sub BuildParticle()
+            Dim d As BlockDefinition
+
+            d = Def("particle_spawn", "粒子生成时", BlockCategory.Trigger, BlockKind.Hat, BlockScope.ParticleOnly, HatKind.ParticleSpawn,
+                    "每个粒子创建时执行一次；用于初始化速度、位置和外观。")
+            AddLabel(d, "当粒子生成时")
+
+            d = Def("particle_every_frame", "粒子每帧", BlockCategory.Trigger, BlockKind.Hat, BlockScope.ParticleOnly, HatKind.ParticleEveryFrame,
+                    "每个粒子每一帧执行；用于持续运动和变化。")
+            AddLabel(d, "粒子每帧")
+
+            d = Def("particle_when_position_2d", "当 2D 粒子位置满足条件", BlockCategory.Trigger, BlockKind.Hat, BlockScope.ParticleOnly, HatKind.ParticleWhenPosition,
+                    "当 2D 粒子的 X 或 Y 坐标满足比较条件时，每一帧执行内部积木。")
+            AddLabel(d, "当粒子 ")
+            AddFieldPart(d, "axis")
+            AddLabel(d, " ")
+            AddFieldPart(d, "op")
+            AddLabel(d, " ")
+            AddFieldPart(d, "value")
+            AddField(d, "axis", FieldKind.Choice, "X", 48, "particleAxes2D", "粒子坐标轴")
+            AddField(d, "op", FieldKind.Choice, ">", 38, "particleComparisons", "比较方式")
+            AddField(d, "value", FieldKind.Number, "0", 52, "", "比较数值")
+            d.Requires2DParticle = True
+
+            d = Def("particle_when_position_3d", "当 3D 粒子位置满足条件", BlockCategory.Trigger, BlockKind.Hat, BlockScope.ParticleOnly, HatKind.ParticleWhenPosition,
+                    "当 3D 粒子的 X、Y 或 Z 坐标满足比较条件时，每一帧执行内部积木。")
+            AddLabel(d, "当粒子 ")
+            AddFieldPart(d, "axis")
+            AddLabel(d, " ")
+            AddFieldPart(d, "op")
+            AddLabel(d, " ")
+            AddFieldPart(d, "value")
+            AddField(d, "axis", FieldKind.Choice, "X", 48, "particleAxes3D", "粒子坐标轴")
+            AddField(d, "op", FieldKind.Choice, ">", 38, "particleComparisons", "比较方式")
+            AddField(d, "value", FieldKind.Number, "0", 52, "", "比较数值")
+            d.Requires3DParticle = True
+
+            d = Def("particle_set_velocity", "设置粒子速度", BlockCategory.Particle, BlockKind.Stack, BlockScope.ParticleOnly, HatKind.None,
+                    "设置粒子在三维空间中的速度。2D 粒子忽略 Z。")
+            AddLabel(d, "设置粒子速度 (")
+            AddFieldPart(d, "x")
+            AddLabel(d, ", ")
+            AddFieldPart(d, "y")
+            AddLabel(d, ", ")
+            AddFieldPart(d, "z")
+            AddLabel(d, ")")
+            AddField(d, "x", FieldKind.Number, "0", 44, "", "X 速度", -1000, 1000)
+            AddField(d, "y", FieldKind.Number, "-2", 44, "", "Y 速度", -1000, 1000)
+            AddField(d, "z", FieldKind.Number, "0", 44, "", "Z 速度", -1000, 1000)
+
+            d = Def("particle_add_velocity", "粒子速度增加", BlockCategory.Particle, BlockKind.Stack, BlockScope.ParticleOnly, HatKind.None,
+                    "在粒子当前速度上增加数值。2D 粒子忽略 Z。")
+            AddLabel(d, "粒子速度增加 (")
+            AddFieldPart(d, "x")
+            AddLabel(d, ", ")
+            AddFieldPart(d, "y")
+            AddLabel(d, ", ")
+            AddFieldPart(d, "z")
+            AddLabel(d, ")")
+            AddField(d, "x", FieldKind.Number, "0", 44, "", "X 增量", -1000, 1000)
+            AddField(d, "y", FieldKind.Number, "0", 44, "", "Y 增量", -1000, 1000)
+            AddField(d, "z", FieldKind.Number, "0", 44, "", "Z 增量", -1000, 1000)
+
+            d = Def("particle_set_position", "设置粒子位置", BlockCategory.Particle, BlockKind.Stack, BlockScope.ParticleOnly, HatKind.None,
+                    "直接设置粒子在背景图层中的位置。")
+            AddLabel(d, "设置粒子位置 (")
+            AddFieldPart(d, "x")
+            AddLabel(d, ", ")
+            AddFieldPart(d, "y")
+            AddLabel(d, ", ")
+            AddFieldPart(d, "z")
+            AddLabel(d, ")")
+            AddField(d, "x", FieldKind.Number, "0", 44, "", "X 坐标")
+            AddField(d, "y", FieldKind.Number, "0", 44, "", "Y 坐标")
+            AddField(d, "z", FieldKind.Number, "0", 44, "", "Z 坐标")
+
+            d = Def("particle_set_size", "设置粒子大小", BlockCategory.Particle, BlockKind.Stack, BlockScope.ParticleOnly, HatKind.None,
+                    "设置粒子的屏幕尺寸（像素）。")
+            AddLabel(d, "设置粒子大小 ")
+            AddFieldPart(d, "size")
+            AddField(d, "size", FieldKind.Number, "3", 44, "", "粒子尺寸", 0.2, 1000)
+
+            d = Def("particle_set_life", "设置粒子寿命", BlockCategory.Particle, BlockKind.Stack, BlockScope.ParticleOnly, HatKind.None,
+                    "设置粒子存在多少帧后消失。")
+            AddLabel(d, "设置粒子寿命 ")
+            AddFieldPart(d, "frames")
+            AddLabel(d, " 帧")
+            AddField(d, "frames", FieldKind.Number, "180", 48, "", "寿命（帧）", 1, 100000)
+
+            d = Def("particle_set_opacity", "设置粒子透明度", BlockCategory.Particle, BlockKind.Stack, BlockScope.ParticleOnly, HatKind.None,
+                    "设置粒子透明度，0 为完全透明，1 为不透明。")
+            AddLabel(d, "设置粒子透明度 ")
+            AddFieldPart(d, "opacity")
+            AddField(d, "opacity", FieldKind.Number, "1", 44, "", "透明度", 0, 1)
+
+            d = Def("particle_set_color", "设置粒子颜色", BlockCategory.Particle, BlockKind.Stack, BlockScope.ParticleOnly, HatKind.None,
+                    "设置粒子颜色，支持 #AARRGGBB 或 #RRGGBB。")
+            AddLabel(d, "设置粒子颜色 ")
+            AddFieldPart(d, "color")
+            AddField(d, "color", FieldKind.Text, "#FFFFFFFF", 100, "", "颜色")
         End Sub
 
     End Module

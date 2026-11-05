@@ -157,6 +157,34 @@ Namespace Global.DanmakuDesigner.Core
                     End If
                 End If
                 For Each c In t.Clips
+                    If c.IsLoopEvent Then
+                        If t.Kind <> TrackKind.Background Then
+                            issues.Add(Make(IssueSeverity.[Error], "循环事件只能放在背景动画轨道上。", "clip", c.Id, t.Name, c.StartTick))
+                        End If
+                        If c.LoopStartTick > c.LoopEndTick Then
+                            issues.Add(Make(IssueSeverity.[Error], "循环起始帧不能大于循环结束帧。", "clip", c.Id, t.Name, c.StartTick))
+                        End If
+                        If c.StartTick <= 0 Then
+                            issues.Add(Make(IssueSeverity.[Error], "循环事件帧必须大于 0。", "clip", c.Id, t.Name, c.StartTick))
+                        End If
+                        If c.LoopStartTick >= c.StartTick OrElse c.LoopEndTick >= c.StartTick Then
+                            issues.Add(Make(IssueSeverity.[Error], "循环起始帧和结束帧都必须早于循环事件帧。", "clip", c.Id, t.Name, c.StartTick))
+                        End If
+                        If c.LoopLength < 1 Then
+                            issues.Add(Make(IssueSeverity.[Error], "循环长度必须至少为 1 帧。", "clip", c.Id, t.Name, c.StartTick))
+                        End If
+                        For Each otherTrack In stage.Tracks
+                            If otherTrack Is Nothing OrElse otherTrack.Kind <> TrackKind.Background Then Continue For
+                            For Each other In otherTrack.Clips
+                                If other Is Nothing OrElse other Is c OrElse Not other.IsLoopEvent Then Continue For
+                                If other.StartTick >= c.LoopStartTick AndAlso other.StartTick <= c.LoopEndTick Then
+                                    issues.Add(Make(IssueSeverity.[Error], "循环区间内不能包含其他循环事件。", "clip", c.Id, t.Name, c.StartTick))
+                                    Exit For
+                                End If
+                            Next
+                        Next
+                        Continue For
+                    End If
                     If c.StartTick > stage.LengthTicks Then
                         issues.Add(Make(IssueSeverity.Warning, "片段起点超过了关卡长度。", "clip", c.Id, t.Name, c.StartTick))
                     End If

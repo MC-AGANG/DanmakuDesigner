@@ -15,6 +15,7 @@
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
@@ -30,17 +31,23 @@
                         <TextBlock Text="3D 图层" Margin="5,0,2,0" VerticalAlignment="Center" />
                     </StackPanel>
                 </Button>
-                <Button Grid.Column="2" Style="{StaticResource VS.ToolButton}" Click="OpenMeshEditor_Click" Height="32"
+                <Button Grid.Column="2" Style="{StaticResource VS.ToolButton}" Click="Add2DParticle_Click" Height="32" ToolTip="添加一个带 2D 粒子的背景图层">
+                    <StackPanel Orientation="Horizontal">
+                        <Image Source="/Assets/Icons/Add_16x.png" Width="16" Height="16" />
+                        <TextBlock Text="2D 粒子" Margin="5,0,2,0" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+                <Button Grid.Column="3" Style="{StaticResource VS.ToolButton}" Click="OpenMeshEditor_Click" Height="32"
                         x:Name="MeshButton" ToolTip="打开当前 3D 图层的建模工具">
                     <StackPanel Orientation="Horizontal">
                         <Image Source="/Assets/Icons/Media_16x.png" Width="16" Height="16" />
                         <TextBlock Text="3D 建模" Margin="5,0,2,0" VerticalAlignment="Center" />
                     </StackPanel>
                 </Button>
-                <Button Grid.Column="3" Style="{StaticResource VS.ToolButton}" Click="DeleteLayer_Click" Height="32" ToolTip="删除当前背景图层">
+                <Button Grid.Column="4" Style="{StaticResource VS.ToolButton}" Click="DeleteLayer_Click" Height="32" ToolTip="删除当前背景图层">
                     <Image Source="/Assets/Icons/DeleteEvent_16x.png" Width="16" Height="16" />
                 </Button>
-                <TextBlock Grid.Column="5" x:Name="SummaryText" FontSize="10" Foreground="#8A8A8A" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="6" x:Name="SummaryText" FontSize="10" Foreground="#8A8A8A" VerticalAlignment="Center" />
             </Grid>
         </Border>
 

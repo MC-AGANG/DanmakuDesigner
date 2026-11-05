@@ -237,6 +237,7 @@ Public Class BackgroundEditor
         InspectorHost.Children.Add(ReadOnlyRow("类型", If(layer.Kind = BackgroundLayerKind.Layer3D, "3D 图层", "2D 图层")))
         InspectorHost.Children.Add(CheckRow("可见", layer.Visible, Sub(value) Apply(Sub() layer.Visible = value)))
         InspectorHost.Children.Add(NumberRow("不透明度", layer.Opacity, Sub(value) Apply(Sub() layer.Opacity = Math.Max(0, Math.Min(1, value))), "0 ~ 1"))
+        InspectorHost.Children.Add(NumberRow("模糊半径", layer.BlurRadius, Sub(value) Apply(Sub() layer.BlurRadius = Math.Max(0, Math.Min(100, value))), "0 = 不模糊"))
 
         If layer.Kind = BackgroundLayerKind.Layer2D Then
             Build2DInspector(layer)
@@ -264,6 +265,8 @@ Public Class BackgroundEditor
             InspectorHost.Children.Add(NumberRow("速度 X", layer.ParticleSpeedX, Sub(value) Apply(Sub() layer.ParticleSpeedX = value)))
             InspectorHost.Children.Add(NumberRow("速度 Y", layer.ParticleSpeedY, Sub(value) Apply(Sub() layer.ParticleSpeedY = value)))
             InspectorHost.Children.Add(NumberRow("散布", layer.ParticleSpread, Sub(value) Apply(Sub() layer.ParticleSpread = Math.Max(0, value))))
+            InspectorHost.Children.Add(NumberRow("寿命", layer.ParticleLifetime, Sub(value) Apply(Sub() layer.ParticleLifetime = Math.Max(1, CInt(value)))))
+            AddParticleButton(layer)
         Else
             InspectorHost.Children.Add(NumberRow("X", layer.X, Sub(value) Apply(Sub() layer.X = value)))
             InspectorHost.Children.Add(NumberRow("Y", layer.Y, Sub(value) Apply(Sub() layer.Y = value)))
@@ -324,6 +327,43 @@ Public Class BackgroundEditor
         InspectorHost.Children.Add(NumberRow("光源 X", layer.LightX, Sub(value) Apply(Sub() layer.LightX = value)))
         InspectorHost.Children.Add(NumberRow("光源 Y", layer.LightY, Sub(value) Apply(Sub() layer.LightY = value)))
         InspectorHost.Children.Add(NumberRow("光源 Z", layer.LightZ, Sub(value) Apply(Sub() layer.LightZ = value)))
+
+        InspectorHost.Children.Add(Ui.SectionTitle("粒子效果"))
+        Dim particleModes As New List(Of ChoiceInfo) From {
+            New ChoiceInfo(BackgroundParticleMode.None.ToString(), "无粒子"),
+            New ChoiceInfo(BackgroundParticleMode.ThreeD.ToString(), "3D 粒子")
+        }
+        InspectorHost.Children.Add(ComboRow("粒子模式", particleModes, layer.ParticleMode.ToString(), Sub(value)
+                                                                                                                Dim mode As BackgroundParticleMode
+                                                                                                                If [Enum].TryParse(value, mode) Then Apply(Sub() layer.ParticleMode = mode)
+                                                                                                            End Sub))
+        If layer.ParticleMode = BackgroundParticleMode.ThreeD Then
+            InspectorHost.Children.Add(NumberRow("粒子数量", layer.ParticleCount, Sub(value) Apply(Sub() layer.ParticleCount = Math.Max(0, Math.Min(5000, CInt(value))))))
+            InspectorHost.Children.Add(ColorRow("粒子颜色", layer.ParticleColor, Sub(value) Apply(Sub() layer.ParticleColor = value)))
+            InspectorHost.Children.Add(NumberRow("最小尺寸", layer.ParticleMinSize, Sub(value) Apply(Sub() layer.ParticleMinSize = Math.Max(0.2, value))))
+            InspectorHost.Children.Add(NumberRow("最大尺寸", layer.ParticleMaxSize, Sub(value) Apply(Sub() layer.ParticleMaxSize = Math.Max(0.2, value))))
+            InspectorHost.Children.Add(NumberRow("速度 X", layer.ParticleSpeedX, Sub(value) Apply(Sub() layer.ParticleSpeedX = value)))
+            InspectorHost.Children.Add(NumberRow("速度 Y", layer.ParticleSpeedY, Sub(value) Apply(Sub() layer.ParticleSpeedY = value)))
+            InspectorHost.Children.Add(NumberRow("速度 Z", layer.ParticleZSpeed, Sub(value) Apply(Sub() layer.ParticleZSpeed = value)))
+            InspectorHost.Children.Add(NumberRow("散布", layer.ParticleSpread, Sub(value) Apply(Sub() layer.ParticleSpread = Math.Max(0, value))))
+            InspectorHost.Children.Add(NumberRow("寿命", layer.ParticleLifetime, Sub(value) Apply(Sub() layer.ParticleLifetime = Math.Max(1, CInt(value)))))
+            AddParticleButton(layer)
+        End If
+    End Sub
+
+    Private Sub AddParticleButton(layer As BackgroundLayer)
+        Dim images = ResourceChoices.ImageFillChoices()
+        InspectorHost.Children.Add(ComboRow("粒子图片", images, layer.ParticleImageResourceId,
+                                            Sub(value) Apply(Sub() layer.ParticleImageResourceId = value)))
+        Dim button As New Button With {
+            .Content = "编辑粒子积木…",
+            .Style = TryCast(Application.Current.FindResource("VS.AccentButton"), Style),
+            .Margin = New Thickness(0, 4, 0, 4),
+            .Padding = New Thickness(10, 4, 10, 4)
+        }
+        AddHandler button.Click, Sub() App.Session.EditBackgroundParticleBehavior(layer)
+        InspectorHost.Children.Add(button)
+        InspectorHost.Children.Add(Ui.Label("2D 使用引擎 Particle，3D 使用引擎 Particle3D；粒子图片留空时使用粒子颜色。", 10, "#8A8A8A"))
     End Sub
 
     Private Sub ToggleVisible(layer As BackgroundLayer)
@@ -341,6 +381,30 @@ Public Class BackgroundEditor
             .X = 62,
             .Y = 150,
             .Fill = "#552A6F9E"
+        }
+        AddLayer(layer)
+    End Sub
+
+    Private Sub Add2DParticle_Click(sender As Object, e As RoutedEventArgs)
+        If Stage Is Nothing Then Return
+        Dim layer As New BackgroundLayer With {
+            .Name = "2D 粒子 " & (Stage.BackgroundLayers.Count + 1).ToString(),
+            .Kind = BackgroundLayerKind.Layer2D,
+            .Shape = BackgroundShape2D.ParticleField,
+            .ParticleMode = BackgroundParticleMode.TwoD,
+            .X = 0,
+            .Y = 0,
+            .Width = 384,
+            .Height = 448,
+            .ParticleCount = 100,
+            .ParticleColor = "#AAFFFFFF",
+            .ParticleMinSize = 1,
+            .ParticleMaxSize = 3,
+            .ParticleSpeedX = 0,
+            .ParticleSpeedY = 1,
+            .ParticleSpread = 1,
+            .ParticleLifetime = 240,
+            .ParticleBehavior = Program.CreateEmpty()
         }
         AddLayer(layer)
     End Sub

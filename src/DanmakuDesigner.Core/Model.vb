@@ -30,6 +30,12 @@ Namespace Global.DanmakuDesigner.Core
         ParticleField = 2
     End Enum
 
+    Public Enum BackgroundParticleMode
+        None = 0
+        TwoD = 1
+        ThreeD = 2
+    End Enum
+
     Public Enum BackgroundMeshKind
         Box = 0
         Cylinder = 1
@@ -67,6 +73,7 @@ Namespace Global.DanmakuDesigner.Core
         Motion = 1
         Attack = 2
         Control = 3
+        Particle = 4
     End Enum
 
     Public Enum BlockKind
@@ -79,6 +86,7 @@ Namespace Global.DanmakuDesigner.Core
     Public Enum ProgramScope
         Enemy = 0
         Bullet = 1
+        Particle = 2
     End Enum
 
     Public Enum FieldKind
@@ -428,6 +436,12 @@ Namespace Global.DanmakuDesigner.Core
         Public Property CueResourceId As String = ""
         Public Property CueValue As Integer = 0
 
+        ''' <summary>背景动画轨道上的循环事件：从 LoopStartTick 到 LoopEndTick 循环 LoopLength 帧。</summary>
+        Public Property IsLoopEvent As Boolean = False
+        Public Property LoopStartTick As Integer = 0
+        Public Property LoopEndTick As Integer = 60
+        Public Property LoopLength As Integer = 60
+
         ''' <summary>背景动画片段持续时间。</summary>
         Public Property AnimationLength As Integer = 60
         Public Property CameraDeltaX As Double = 0
@@ -502,6 +516,10 @@ Namespace Global.DanmakuDesigner.Core
                 .CueText = CueText,
                 .CueResourceId = CueResourceId,
                 .CueValue = CueValue,
+                .IsLoopEvent = IsLoopEvent,
+                .LoopStartTick = LoopStartTick,
+                .LoopEndTick = LoopEndTick,
+                .LoopLength = LoopLength,
                 .AnimationLength = AnimationLength,
                 .CameraDeltaX = CameraDeltaX,
                 .CameraDeltaY = CameraDeltaY,
@@ -542,6 +560,9 @@ Namespace Global.DanmakuDesigner.Core
             If CueText Is Nothing Then CueText = ""
             If CueResourceId Is Nothing Then CueResourceId = ""
             If AnimationLength < 1 Then AnimationLength = 1
+            If LoopStartTick < 0 Then LoopStartTick = 0
+            If LoopEndTick < 0 Then LoopEndTick = 0
+            If LoopLength < 1 Then LoopLength = 1
             If CameraFieldOfViewTo <= 0 Then CameraFieldOfViewTo = 45
             If ScaleTo <= 0 Then ScaleTo = 1
             If OpacityTo < 0 Then OpacityTo = 0
@@ -575,11 +596,21 @@ Namespace Global.DanmakuDesigner.Core
         Public Property CornerRadius As Double = 0
         Public Property ParticleCount As Integer = 80
         Public Property ParticleColor As String = "#B0FFFFFF"
+        ''' <summary>粒子填充图片资源；留空时使用 ParticleColor 纯色填充。</summary>
+        Public Property ParticleImageResourceId As String = ""
         Public Property ParticleMinSize As Double = 1
         Public Property ParticleMaxSize As Double = 3
         Public Property ParticleSpeedX As Double = 0
         Public Property ParticleSpeedY As Double = 18
         Public Property ParticleSpread As Double = 1
+        ''' <summary>粒子效果模式；2D 图层默认 2D，3D 图层可切换为 3D。</summary>
+        Public Property ParticleMode As BackgroundParticleMode = BackgroundParticleMode.None
+        Public Property ParticleZSpeed As Double = 0
+        Public Property ParticleLifetime As Integer = 240
+        ''' <summary>粒子效果的积木行为。</summary>
+        Public Property ParticleBehavior As Program
+        ''' <summary>整个背景图层的模糊半径，0 表示不模糊。</summary>
+        Public Property BlurRadius As Double = 0
 
         ' 3D 图层
         Public Property CameraX As Double = 0
@@ -611,12 +642,20 @@ Namespace Global.DanmakuDesigner.Core
             If Fill Is Nothing Then Fill = "#331E88E5"
             If ImageResourceId Is Nothing Then ImageResourceId = ""
             If ParticleColor Is Nothing Then ParticleColor = "#B0FFFFFF"
+            If ParticleImageResourceId Is Nothing Then ParticleImageResourceId = ""
             If ParticleCount < 0 Then ParticleCount = 0
             If ParticleCount > 5000 Then ParticleCount = 5000
             If ParticleMinSize < 0.2 Then ParticleMinSize = 0.2
             If ParticleMaxSize < ParticleMinSize Then ParticleMaxSize = ParticleMinSize
             If ParticleSpread < 0 Then ParticleSpread = 0
             If ParticleSpread > 10 Then ParticleSpread = 10
+            If ParticleBehavior Is Nothing Then ParticleBehavior = Program.CreateEmpty()
+            ParticleBehavior.Normalize()
+            If Shape = BackgroundShape2D.ParticleField AndAlso ParticleMode = BackgroundParticleMode.None Then ParticleMode = BackgroundParticleMode.TwoD
+            If ParticleMode <> BackgroundParticleMode.None Then ParticleBehavior.Normalize()
+            If ParticleLifetime < 1 Then ParticleLifetime = 240
+            If BlurRadius < 0 Then BlurRadius = 0
+            If BlurRadius > 100 Then BlurRadius = 100
             If FieldOfView < 1 Then FieldOfView = 45
             If FieldOfView > 170 Then FieldOfView = 170
             If LookX = 0 AndAlso LookY = 0 AndAlso LookZ = 0 Then LookZ = 1

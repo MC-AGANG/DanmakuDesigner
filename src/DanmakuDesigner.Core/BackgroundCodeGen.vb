@@ -29,6 +29,14 @@ Namespace Global.DanmakuDesigner.Core
             sb.AppendLine("             xmlns:mc=""http://schemas.openxmlformats.org/markup-compatibility/2006""")
             sb.AppendLine("             xmlns:d=""http://schemas.microsoft.com/expression/blend/2008""")
             sb.AppendLine("             mc:Ignorable=""d"" d:DesignHeight=""448"" d:DesignWidth=""384"">")
+            Dim particleResources = _stage.BackgroundLayers.Where(Function(l) l IsNot Nothing AndAlso HasCustomParticles(l) AndAlso ResourceUri(l.ParticleImageResourceId) IsNot Nothing).ToList()
+            If particleResources.Count > 0 Then
+                sb.AppendLine("    <UserControl.Resources>")
+                For Each layer In particleResources
+                    sb.AppendLine("        <ImageBrush x:Key=""" & ParticleBrushKey(layer) & """ ImageSource=""" & XmlEscape(ResourceUri(layer.ParticleImageResourceId)) & """ Stretch=""Fill""/>")
+                Next
+                sb.AppendLine("    </UserControl.Resources>")
+            End If
             sb.AppendLine("    <Canvas x:Name=""Root"" ClipToBounds=""True"" Width=""384"" Height=""448"">")
             For Each layer In _stage.BackgroundLayers
                 If layer Is Nothing Then Continue For
@@ -46,7 +54,7 @@ Namespace Global.DanmakuDesigner.Core
         Private Sub Append2DLayer(sb As StringBuilder, layer As BackgroundLayer)
             Dim visibility = If(layer.Visible, "Visible", "Collapsed")
             If layer.Shape = BackgroundShape2D.ParticleField Then
-                sb.AppendLine("        <Canvas x:Name=""" & ParticleCanvasName(layer) & """ Canvas.Left=""0"" Canvas.Top=""0"" Width=""384"" Height=""448"" Opacity=""" & N(layer.Opacity) & """ Visibility=""" & visibility & """ IsHitTestVisible=""False""/>")
+                AppendCustomParticleCanvas(sb, layer)
                 Return
             End If
 
@@ -62,13 +70,52 @@ Namespace Global.DanmakuDesigner.Core
                 sb.AppendLine("            <" & shapeTag & ".Fill>")
                 sb.AppendLine("                <ImageBrush ImageSource=""" & XmlEscape(imageUri) & """ Stretch=""Fill""/>")
                 sb.AppendLine("            </" & shapeTag & ".Fill>")
+                If layer.BlurRadius > 0 Then
+                    sb.AppendLine("            <" & shapeTag & ".Effect>")
+                    sb.AppendLine("                <BlurEffect Radius=""" & N(layer.BlurRadius) & """/>")
+                    sb.AppendLine("            </" & shapeTag & ".Effect>")
+                End If
                 sb.AppendLine("        </" & shapeTag & ">")
                 Return
             End If
-            sb.AppendLine("        <" & shapeTag & " x:Name=""" & LayerName(layer) & """ Canvas.Left=""" & N(layer.X) & """ Canvas.Top=""" & N(layer.Y) &
-                          """ Width=""" & N(layer.Width) & """ Height=""" & N(layer.Height) & """ Fill=""" & VBCodeGenerator.NormalizeColor(layer.Fill) &
-                          """ Stroke=""" & VBCodeGenerator.NormalizeColor(layer.Stroke) & """ StrokeThickness=""" & N(layer.StrokeThickness) &
-                          """" & radius & " Opacity=""" & N(layer.Opacity) & """ Visibility=""" & visibility & """ IsHitTestVisible=""False""/>")
+            Dim shapeOpen = "        <" & shapeTag & " x:Name=""" & LayerName(layer) & """ Canvas.Left=""" & N(layer.X) & """ Canvas.Top=""" & N(layer.Y) &
+                            """ Width=""" & N(layer.Width) & """ Height=""" & N(layer.Height) & """ Fill=""" & VBCodeGenerator.NormalizeColor(layer.Fill) &
+                            """ Stroke=""" & VBCodeGenerator.NormalizeColor(layer.Stroke) & """ StrokeThickness=""" & N(layer.StrokeThickness) &
+                            """" & radius & " Opacity=""" & N(layer.Opacity) & """ Visibility=""" & visibility & """ IsHitTestVisible=""False"""
+            If layer.BlurRadius > 0 Then
+                sb.AppendLine(shapeOpen & ">")
+                sb.AppendLine("            <" & shapeTag & ".Effect>")
+                sb.AppendLine("                <BlurEffect Radius=""" & N(layer.BlurRadius) & """/>")
+                sb.AppendLine("            </" & shapeTag & ".Effect>")
+                sb.AppendLine("        </" & shapeTag & ">")
+            Else
+                sb.AppendLine(shapeOpen & "/>")
+            End If
+            AppendCustomParticleCanvas(sb, layer)
+        End Sub
+
+        Private Sub AppendCustomParticleCanvas(sb As StringBuilder, layer As BackgroundLayer)
+            If Not HasCustomParticles(layer) OrElse layer.Kind <> BackgroundLayerKind.Layer2D Then Return
+            Dim visibility = If(layer.Visible, "Visible", "Collapsed")
+            Dim canvasOpen = "        <Canvas x:Name=""" & CustomParticleCanvasName(layer) & """ Canvas.Left=""0"" Canvas.Top=""0"" Width=""384"" Height=""448"" Opacity=""" & N(layer.Opacity) & """ Visibility=""" & visibility & """ IsHitTestVisible=""False"""
+            If layer.BlurRadius > 0 Then
+                sb.AppendLine(canvasOpen & ">")
+                sb.AppendLine("            <Canvas.Effect>")
+                sb.AppendLine("                <BlurEffect Radius=""" & N(layer.BlurRadius) & """/>")
+                sb.AppendLine("            </Canvas.Effect>")
+                sb.AppendLine("        </Canvas>")
+            Else
+                sb.AppendLine(canvasOpen & "/>")
+            End If
+        End Sub
+
+        Private Sub AppendCustomParticleGroup(sb As StringBuilder, layer As BackgroundLayer)
+            If Not HasCustomParticles(layer) OrElse layer.Kind <> BackgroundLayerKind.Layer3D Then Return
+            sb.AppendLine("        <ModelVisual3D>")
+            sb.AppendLine("            <ModelVisual3D.Content>")
+            sb.AppendLine("                <Model3DGroup x:Name=""" & CustomParticleGroupName(layer) & """/>")
+            sb.AppendLine("            </ModelVisual3D.Content>")
+            sb.AppendLine("        </ModelVisual3D>")
         End Sub
 
         Private Sub Append3DLayer(sb As StringBuilder, layer As BackgroundLayer)
@@ -92,6 +139,12 @@ Namespace Global.DanmakuDesigner.Core
             sb.AppendLine("                    </Model3DGroup>")
             sb.AppendLine("                </ModelVisual3D.Content>")
             sb.AppendLine("            </ModelVisual3D>")
+            AppendCustomParticleGroup(sb, layer)
+            If layer.BlurRadius > 0 Then
+                sb.AppendLine("            <Viewport3D.Effect>")
+                sb.AppendLine("                <BlurEffect Radius=""" & N(layer.BlurRadius) & """/>")
+                sb.AppendLine("            </Viewport3D.Effect>")
+            End If
             sb.AppendLine("        </Viewport3D>")
         End Sub
 
@@ -164,22 +217,31 @@ Namespace Global.DanmakuDesigner.Core
             w.Line("Imports System.Windows.Media")
             w.Line("Imports System.Windows.Media.Media3D")
             w.Line("Imports System.Windows.Shapes")
+            w.Line("Imports AgSTG")
             w.Line()
             w.Open("Public Class " & _className & "bg")
             w.Line("Inherits UserControl")
             w.Line("Private _ticks As Long = 0")
+            Dim loopEvents = BackgroundLoopClips()
+            If loopEvents.Count > 0 Then
+                w.Line("Private _bgLoopActive As Boolean = False")
+                w.Line("Private _bgLoopRemaining As Integer = 0")
+                w.Line("Private _bgLoopStart As Long = 0")
+                w.Line("Private _bgLoopEnd As Long = 0")
+                w.Line("Private _bgLoopResume As Long = 0")
+            End If
             For Each layer In _stage.BackgroundLayers
-                If layer IsNot Nothing AndAlso layer.Kind = BackgroundLayerKind.Layer2D AndAlso layer.Shape = BackgroundShape2D.ParticleField Then
-                    w.Line("Private ReadOnly _particles_" & SafeId(layer.Id) & " As New List(Of BgParticle)")
-                    w.Line("Private _particleSpeedX_" & SafeId(layer.Id) & " As Double = " & N(layer.ParticleSpeedX))
-                    w.Line("Private _particleSpeedY_" & SafeId(layer.Id) & " As Double = " & N(layer.ParticleSpeedY))
+                If layer IsNot Nothing AndAlso ((layer.Kind = BackgroundLayerKind.Layer2D AndAlso layer.Shape = BackgroundShape2D.ParticleField) OrElse HasCustomParticles(layer)) Then
+                    Dim particleType = If(layer.ParticleMode = BackgroundParticleMode.ThreeD, "Particle3D", "Particle")
+                    w.Line("Private ReadOnly _particles_" & SafeId(layer.Id) & " As New List(Of " & particleType & ")")
+                    w.Line("Private _particleLife_" & SafeId(layer.Id) & " As Double = " & Math.Max(1, layer.ParticleLifetime).ToString(CultureInfo.InvariantCulture))
                 End If
             Next
             w.Line()
             w.Open("Public Sub New()")
             w.Line("InitializeComponent()")
             For Each layer In _stage.BackgroundLayers
-                If layer IsNot Nothing AndAlso layer.Kind = BackgroundLayerKind.Layer2D AndAlso layer.Shape = BackgroundShape2D.ParticleField Then
+                If layer IsNot Nothing AndAlso ((layer.Kind = BackgroundLayerKind.Layer2D AndAlso layer.Shape = BackgroundShape2D.ParticleField) OrElse HasCustomParticles(layer)) Then
                     w.Line("InitParticles_" & SafeId(layer.Id) & "()")
                 End If
             Next
@@ -187,7 +249,7 @@ Namespace Global.DanmakuDesigner.Core
             w.Line()
 
             For Each layer In _stage.BackgroundLayers
-                If layer IsNot Nothing AndAlso layer.Kind = BackgroundLayerKind.Layer2D AndAlso layer.Shape = BackgroundShape2D.ParticleField Then
+                If layer IsNot Nothing AndAlso ((layer.Kind = BackgroundLayerKind.Layer2D AndAlso layer.Shape = BackgroundShape2D.ParticleField) OrElse HasCustomParticles(layer)) Then
                     EmitParticleMethods(w, layer)
                 End If
             Next
@@ -195,65 +257,206 @@ Namespace Global.DanmakuDesigner.Core
             w.Open("Public Sub Render()")
             w.Line("AnimateBackground()")
             For Each layer In _stage.BackgroundLayers
-                If layer IsNot Nothing AndAlso layer.Kind = BackgroundLayerKind.Layer2D AndAlso layer.Shape = BackgroundShape2D.ParticleField Then
+                If layer IsNot Nothing AndAlso ((layer.Kind = BackgroundLayerKind.Layer2D AndAlso layer.Shape = BackgroundShape2D.ParticleField) OrElse HasCustomParticles(layer)) Then
                     w.Line("UpdateParticles_" & SafeId(layer.Id) & "()")
                 End If
             Next
-            w.Line("_ticks += 1")
+            w.Line(If(loopEvents.Count > 0, "AdvanceBackgroundTick()", "_ticks += 1"))
             w.Close("End Sub")
             w.Line()
-            EmitAnimation(w)
-            If AnyParticleLayer() Then
-                w.Line()
-                w.Open("Private Class BgParticle")
-                w.Line("Public X As Double")
-                w.Line("Public Y As Double")
-                w.Line("Public SpeedX As Double")
-                w.Line("Public SpeedY As Double")
-                w.Line("Public Shape As Ellipse")
-                w.Close("End Class")
+            If loopEvents.Count > 0 Then
+                EmitBackgroundLoopClock(w, loopEvents)
             End If
+            EmitAnimation(w)
             w.Close("End Class")
             Return w.ToString()
         End Function
 
         Private Sub EmitParticleMethods(w As CodeWriter, layer As BackgroundLayer)
+            EmitCustomParticleMethods(w, layer)
+        End Sub
+
+        Private Sub EmitCustomParticleMethods(w As CodeWriter, layer As BackgroundLayer)
             Dim id = SafeId(layer.Id)
-            Dim canvasName = ParticleCanvasName(layer)
+            Dim is3D = layer.ParticleMode = BackgroundParticleMode.ThreeD
+            Dim typeName = If(is3D, "Particle3D", "Particle")
+            Dim canvasName = CustomParticleCanvasName(layer)
+            Dim groupName = CustomParticleGroupName(layer)
+
             w.Open("Private Sub InitParticles_" & id & "()")
             w.Line("Dim rnd As New Random(" & Math.Abs(layer.Id.GetHashCode()) Mod 100000 & ")")
-            w.Line("Dim brush As New SolidColorBrush(DirectCast(ColorConverter.ConvertFromString(" & VBCodeGenerator.Quote(layer.ParticleColor) & "), Color))")
+            If ResourceUri(layer.ParticleImageResourceId) IsNot Nothing Then
+                w.Line("Dim brush As Brush = TryCast(FindResource(" & VBCodeGenerator.Quote(ParticleBrushKey(layer)) & "), Brush)")
+                w.Line("If brush Is Nothing Then brush = New SolidColorBrush(DirectCast(ColorConverter.ConvertFromString(" & VBCodeGenerator.Quote(layer.ParticleColor) & "), Color))")
+            Else
+                w.Line("Dim brush As New SolidColorBrush(DirectCast(ColorConverter.ConvertFromString(" & VBCodeGenerator.Quote(layer.ParticleColor) & "), Color))")
+            End If
             w.Open("For i As Integer = 1 To " & Math.Max(0, layer.ParticleCount).ToString(CultureInfo.InvariantCulture))
-            w.Line("Dim p As New BgParticle()")
-            w.Line("p.X = rnd.NextDouble() * " & N(layer.Width))
-            w.Line("p.Y = rnd.NextDouble() * " & N(layer.Height))
-            w.Line("p.SpeedX = (rnd.NextDouble() * 2.0 - 1.0) * " & N(layer.ParticleSpread * 8))
-            w.Line("p.SpeedY = (rnd.NextDouble() * 2.0 - 1.0) * " & N(layer.ParticleSpread * 8))
+            w.Line("Dim x = rnd.NextDouble() * " & N(layer.Width))
+            w.Line("Dim y = rnd.NextDouble() * " & N(layer.Height))
+            w.Line("Dim z = (rnd.NextDouble() * 2 - 1) * " & N(Math.Max(1, layer.ParticleSpread) * 8))
             w.Line("Dim size = " & N(layer.ParticleMinSize) & " + rnd.NextDouble() * " & N(Math.Max(0, layer.ParticleMaxSize - layer.ParticleMinSize)))
-            w.Line("p.Shape = New Ellipse()")
-            w.Line("p.Shape.Width = size : p.Shape.Height = size")
-            w.Line("p.Shape.Fill = brush")
-            w.Line("Canvas.SetLeft(p.Shape, p.X) : Canvas.SetTop(p.Shape, p.Y)")
-            w.Line(canvasName & ".Children.Add(p.Shape)")
+            If is3D Then
+                w.Line("Dim p As New Particle3D(x, y, z, size, size, New Vector3D(" &
+                       N(layer.ParticleSpeedX) & ", " & N(layer.ParticleSpeedY) & ", " & N(layer.ParticleZSpeed) & "), " & groupName & ", brush)")
+            Else
+                w.Line("Dim p As New Particle(x, y, size, size, " & canvasName & ")")
+                w.Line("p.Background = brush")
+                w.Line("SetParticleVelocity_" & id & "(p, " & N(layer.ParticleSpeedX) & ", " & N(layer.ParticleSpeedY) & ")")
+            End If
+            w.Line("p.Act = Sub() ApplyParticleFrame_" & id & "(p)")
+            w.Line("ApplyParticleSpawn_" & id & "(p)")
             w.Line("_particles_" & id & ".Add(p)")
             w.Close("Next")
             w.Close("End Sub")
             w.Line()
+
             w.Open("Private Sub UpdateParticles_" & id & "()")
             w.Open("For Each p In _particles_" & id)
-            w.Line("p.X += p.SpeedX + _particleSpeedX_" & id)
-            w.Line("p.Y += p.SpeedY + _particleSpeedY_" & id)
-            w.Open("If p.Y > " & N(layer.Height + 8) & " Then")
-            w.Line("p.Y = -8 : p.X = Rnd() * " & N(layer.Width))
+            w.Line("p.Render()")
+            w.Open("If p.Ticks >= _particleLife_" & id & " Then")
+            w.Line("p.Ticks = 0")
+            w.Line("p.X = Rnd() * " & N(layer.Width))
+            w.Line("p.Y = Rnd() * " & N(layer.Height))
+            If is3D Then w.Line("p.Z = (Rnd() * 2 - 1) * " & N(Math.Max(1, layer.ParticleSpread) * 8))
+            w.Line("ApplyParticleSpawn_" & id & "(p)")
             w.Close("End If")
-            w.Open("If p.X < -8 Then")
-            w.Line("p.X = " & N(layer.Width + 8))
+            w.Open("If p.X < -32 Then")
+            w.Line("p.X = " & N(layer.Width + 32))
             w.Close("End If")
-            w.Open("If p.X > " & N(layer.Width + 8) & " Then")
-            w.Line("p.X = -8")
+            w.Open("If p.X > " & N(layer.Width + 32) & " Then")
+            w.Line("p.X = -32")
             w.Close("End If")
-            w.Line("Canvas.SetLeft(p.Shape, p.X) : Canvas.SetTop(p.Shape, p.Y)")
+            w.Open("If p.Y > " & N(layer.Height + 32) & " Then")
+            w.Line("p.Y = -32")
+            w.Close("End If")
+            w.Open("If p.Y < -32 Then")
+            w.Line("p.Y = " & N(layer.Height + 32))
+            w.Close("End If")
             w.Close("Next")
+            w.Close("End Sub")
+            w.Line()
+
+            If Not is3D Then
+                w.Open("Private Sub SetParticleVelocity_" & id & "(p As Particle, vx As Double, vy As Double)")
+                w.Line("p.Speed = Math.Sqrt(vx * vx + vy * vy)")
+                w.Line("p.Direction = Math.Atan2(vx, -vy) * 180 / Math.PI")
+                w.Close("End Sub")
+                w.Line()
+            End If
+
+            w.Open("Private Sub ApplyParticleSpawn_" & id & "(p As " & typeName & ")")
+            EmitParticleScripts(w, layer, HatKind.ParticleSpawn, is3D, id)
+            w.Close("End Sub")
+            w.Line()
+            w.Open("Private Sub ApplyParticleFrame_" & id & "(p As " & typeName & ")")
+            EmitParticleFrameScripts(w, layer, is3D, id)
+            w.Close("End Sub")
+            w.Line()
+        End Sub
+
+        Private Sub EmitParticleFrameScripts(w As CodeWriter, layer As BackgroundLayer, is3D As Boolean, id As String)
+            If layer.ParticleBehavior Is Nothing Then Return
+            For Each script In layer.ParticleBehavior.Scripts
+                If script Is Nothing OrElse script.Definition Is Nothing Then Continue For
+                Select Case script.Definition.HatKind
+                    Case HatKind.ParticleEveryFrame
+                        For Each child In script.Children
+                            EmitParticleBlock(w, child, is3D, id)
+                        Next
+                    Case HatKind.ParticleWhenPosition
+                        Dim axis = script.GetField("axis").Trim().ToUpperInvariant()
+                        If axis <> "X" AndAlso axis <> "Y" AndAlso (Not is3D OrElse axis <> "Z") Then axis = "X"
+                        Dim op = script.GetField("op").Trim()
+                        If op <> ">" AndAlso op <> "=" AndAlso op <> "<" Then op = ">"
+                        Dim value = script.GetDouble("value", 0)
+                        w.Open("If p." & axis & " " & op & " " & N(value) & " Then")
+                        For Each child In script.Children
+                            EmitParticleBlock(w, child, is3D, id)
+                        Next
+                        w.Close("End If")
+                End Select
+            Next
+        End Sub
+
+        Private Sub EmitParticleScripts(w As CodeWriter, layer As BackgroundLayer, hat As HatKind, is3D As Boolean, id As String)
+            If layer.ParticleBehavior Is Nothing Then Return
+            For Each script In layer.ParticleBehavior.Scripts
+                If script Is Nothing OrElse script.Definition Is Nothing OrElse script.Definition.HatKind <> hat Then Continue For
+                For Each child In script.Children
+                    EmitParticleBlock(w, child, is3D, id)
+                Next
+            Next
+        End Sub
+
+        Private Sub EmitParticleBlock(w As CodeWriter, block As BlockNode, is3D As Boolean, id As String)
+            If block Is Nothing Then Return
+            Select Case block.TypeId
+                Case "particle_set_velocity"
+                    If is3D Then
+                        w.Line("p.Speed = New Vector3D(" & N(block.GetDouble("x", 0)) & ", " & N(block.GetDouble("y", 0)) & ", " & N(block.GetDouble("z", 0)) & ")")
+                    Else
+                        w.Line("SetParticleVelocity_" & id & "(p, " & N(block.GetDouble("x", 0)) & ", " & N(block.GetDouble("y", 0)) & ")")
+                    End If
+                Case "particle_add_velocity"
+                    If is3D Then
+                        w.Line("p.Speed = New Vector3D(p.Speed.X + " & N(block.GetDouble("x", 0)) & ", p.Speed.Y + " & N(block.GetDouble("y", 0)) & ", p.Speed.Z + " & N(block.GetDouble("z", 0)) & ")")
+                    Else
+                        w.Line("SetParticleVelocity_" & id & "(p, p.Speed * Math.Sin(p.Direction * Math.PI / 180) + " & N(block.GetDouble("x", 0)) & ", -p.Speed * Math.Cos(p.Direction * Math.PI / 180) + " & N(block.GetDouble("y", 0)) & ")")
+                    End If
+                Case "particle_set_position"
+                    w.Line("p.X = " & N(block.GetDouble("x", 0)) & " : p.Y = " & N(block.GetDouble("y", 0)))
+                    If is3D Then w.Line("p.Z = " & N(block.GetDouble("z", 0)))
+                Case "particle_set_size"
+                    w.Line("p.Width = " & N(block.GetDouble("size", 3)) & " : p.Height = " & N(block.GetDouble("size", 3)))
+                Case "particle_set_life"
+                    w.Line("_particleLife_" & id & " = " & Math.Max(1, CInt(block.GetDouble("frames", 180))).ToString(CultureInfo.InvariantCulture))
+                Case "particle_set_opacity"
+                    If Not is3D Then w.Line("p.Opacity = " & N(Math.Max(0, Math.Min(1, block.GetDouble("opacity", 1)))))
+                Case "particle_set_color"
+                    If Not is3D Then w.Line("p.Background = New SolidColorBrush(DirectCast(ColorConverter.ConvertFromString(" & VBCodeGenerator.Quote(block.GetField("color")) & "), Color))")
+            End Select
+        End Sub
+
+        Private Function BackgroundLoopClips() As List(Of TimelineClip)
+            Dim result As New List(Of TimelineClip)
+            For Each track In _stage.Tracks
+                If track Is Nothing OrElse track.Kind <> TrackKind.Background Then Continue For
+                For Each clip In track.Clips
+                    If clip Is Nothing OrElse Not clip.IsLoopEvent Then Continue For
+                    If clip.StartTick <= 0 OrElse clip.LoopStartTick < 0 OrElse clip.LoopEndTick < clip.LoopStartTick Then Continue For
+                    If clip.LoopEndTick >= clip.StartTick Then Continue For
+                    result.Add(clip)
+                Next
+            Next
+            Return result.OrderBy(Function(c) c.StartTick).ToList()
+        End Function
+
+        Private Sub EmitBackgroundLoopClock(w As CodeWriter, events As List(Of TimelineClip))
+            w.Open("Private Sub AdvanceBackgroundTick()")
+            w.Open("If _bgLoopActive Then")
+            w.Line("_bgLoopRemaining -= 1")
+            w.Open("If _bgLoopRemaining <= 0 Then")
+            w.Line("_bgLoopActive = False")
+            w.Line("_ticks = _bgLoopResume")
+            w.Close("Else")
+            w.Line("_ticks += 1")
+            w.Line("If _ticks > _bgLoopEnd Then _ticks = _bgLoopStart")
+            w.Close("End If")
+            w.Line("Return")
+            w.Close("End If")
+            w.Line("_ticks += 1")
+            For Each clip In events
+                w.Open("If _ticks = " & clip.StartTick.ToString(CultureInfo.InvariantCulture) & " Then")
+                w.Line("_bgLoopActive = True")
+                w.Line("_bgLoopRemaining = " & Math.Max(1, clip.LoopLength).ToString(CultureInfo.InvariantCulture))
+                w.Line("_bgLoopStart = " & clip.LoopStartTick.ToString(CultureInfo.InvariantCulture))
+                w.Line("_bgLoopEnd = " & clip.LoopEndTick.ToString(CultureInfo.InvariantCulture))
+                w.Line("_bgLoopResume = " & (clip.StartTick + 1).ToString(CultureInfo.InvariantCulture))
+                w.Line("_ticks = _bgLoopStart")
+                w.Line("Return")
+                w.Close("End If")
+            Next
             w.Close("End Sub")
             w.Line()
         End Sub
@@ -359,7 +562,11 @@ Namespace Global.DanmakuDesigner.Core
         End Sub
 
         Private Function AnyParticleLayer() As Boolean
-            Return _stage.BackgroundLayers.Any(Function(l) l IsNot Nothing AndAlso l.Kind = BackgroundLayerKind.Layer2D AndAlso l.Shape = BackgroundShape2D.ParticleField)
+            Return _stage.BackgroundLayers.Any(Function(l) l IsNot Nothing AndAlso ((l.Kind = BackgroundLayerKind.Layer2D AndAlso l.Shape = BackgroundShape2D.ParticleField) OrElse HasCustomParticles(l)))
+        End Function
+
+        Private Function HasCustomParticles(layer As BackgroundLayer) As Boolean
+            Return layer IsNot Nothing AndAlso (layer.Shape = BackgroundShape2D.ParticleField OrElse layer.ParticleMode <> BackgroundParticleMode.None)
         End Function
 
         Private Function ResourceUri(resourceId As String) As String
@@ -387,6 +594,18 @@ Namespace Global.DanmakuDesigner.Core
 
         Private Function ParticleCanvasName(layer As BackgroundLayer) As String
             Return "BgParticles_" & SafeId(layer.Id)
+        End Function
+
+        Private Function CustomParticleCanvasName(layer As BackgroundLayer) As String
+            Return "BgParticlesCustom_" & SafeId(layer.Id)
+        End Function
+
+        Private Function CustomParticleGroupName(layer As BackgroundLayer) As String
+            Return "BgParticles3D_" & SafeId(layer.Id)
+        End Function
+
+        Private Function ParticleBrushKey(layer As BackgroundLayer) As String
+            Return "BgParticleBrush_" & SafeId(layer.Id)
         End Function
 
         Private Shared Function N(value As Double) As String

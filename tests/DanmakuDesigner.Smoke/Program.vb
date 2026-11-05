@@ -1,4 +1,5 @@
 Imports System
+Imports System.Collections.Generic
 Imports System.IO
 Imports System.Linq
 Imports System.Text
@@ -188,10 +189,74 @@ Module Program
             .Name = "测试粒子",
             .Kind = BackgroundLayerKind.Layer2D,
             .Shape = BackgroundShape2D.ParticleField,
-            .ParticleCount = 20
+            .ParticleCount = 20,
+            .ParticleImageResourceId = "res_snow",
+            .BlurRadius = 5
         })
-        Dim particleGenerated = VBCodeGenerator.Generate(particleStage, "F:\code\AgSTG")
-        AssertTrue(particleGenerated.BackgroundCode.Contains("BgParticles_"), "background code contains particle canvas", failures)
+        Dim particleUris As New Dictionary(Of String, String) From {
+            {"res_snow", "pack://application:,,,/GameResources;component/Resources/res_snow.png"}
+        }
+        Dim particleGenerated = VBCodeGenerator.Generate(particleStage, "F:\code\AgSTG", particleUris)
+        AssertTrue(particleGenerated.BackgroundXaml.Contains("BgParticlesCustom_"), "background xaml contains particle canvas", failures)
+        AssertTrue(particleGenerated.BackgroundCode.Contains("List(Of Particle)"), "background code uses engine Particle", failures)
+        AssertTrue(particleGenerated.BackgroundCode.Contains("New Particle("), "background code creates engine Particle", failures)
+        AssertTrue(particleGenerated.BackgroundXaml.Contains("BgParticleBrush_"), "particle image brush resource generated", failures)
+        AssertTrue(particleGenerated.BackgroundCode.Contains("FindResource("), "particle code resolves image brush", failures)
+        AssertTrue(particleGenerated.BackgroundXaml.Contains("BlurEffect Radius="""), "background layer blur emitted", failures)
+        Dim p3dBehavior = DanmakuDesigner.Core.Program.CreateEmpty()
+        Dim p3dCondition = BlockRegistry.CreateBlock("particle_when_position_3d", Nothing)
+        p3dCondition.SetField("axis", "Z")
+        p3dCondition.SetField("op", "<")
+        p3dCondition.SetField("value", "-5")
+        Dim p3dSize = BlockRegistry.CreateBlock("particle_set_size", Nothing)
+        p3dSize.SetField("size", "4")
+        p3dCondition.Children.Add(p3dSize)
+        p3dBehavior.Scripts.Add(p3dCondition)
+        particleStage.Stage.BackgroundLayers.Add(New BackgroundLayer With {
+            .Id = "bg_test_particles3d",
+            .Name = "测试3D粒子",
+            .Kind = BackgroundLayerKind.Layer3D,
+            .ParticleMode = BackgroundParticleMode.ThreeD,
+            .ParticleCount = 8,
+            .ParticleBehavior = p3dBehavior
+        })
+        Dim particle3DGenerated = VBCodeGenerator.Generate(particleStage, "F:\code\AgSTG")
+        AssertTrue(particle3DGenerated.BackgroundCode.Contains("List(Of Particle3D)"), "background code uses engine Particle3D", failures)
+        AssertTrue(particle3DGenerated.BackgroundCode.Contains("New Particle3D("), "background code creates engine Particle3D", failures)
+        AssertTrue(particle3DGenerated.BackgroundCode.Contains("If p.Z < -5 Then"), "particle position condition codegen", failures)
+        AssertTrue(particle3DGenerated.BackgroundXaml.Contains("BgParticles3D_"), "background xaml contains Particle3D group", failures)
+        Dim particle2DDefinitions = BlockRegistry.ForScope(ProgramScope.Particle, False, False).Select(Function(d) d.TypeId).ToList()
+        Dim particle3DDefinitions = BlockRegistry.ForScope(ProgramScope.Particle, False, True).Select(Function(d) d.TypeId).ToList()
+        AssertTrue(particle2DDefinitions.Contains("particle_when_position_2d"), "2D particle palette has 2D condition", failures)
+        AssertTrue(Not particle2DDefinitions.Contains("particle_when_position_3d"), "2D particle palette hides 3D condition", failures)
+        AssertTrue(particle3DDefinitions.Contains("particle_when_position_3d"), "3D particle palette has 3D condition", failures)
+        AssertTrue(Not particle3DDefinitions.Contains("particle_when_position_2d"), "3D particle palette hides 2D condition", failures)
+        Dim normalEnemyBlocks = BlockRegistry.ForScope(ProgramScope.Enemy, False).Select(Function(d) d.TypeId).ToList()
+        Dim bossEnemyBlocks = BlockRegistry.ForScope(ProgramScope.Enemy, True).Select(Function(d) d.TypeId).ToList()
+        AssertTrue(Not normalEnemyBlocks.Contains("boss_init"), "normal enemy hides boss blocks", failures)
+        AssertTrue(bossEnemyBlocks.Contains("boss_init"), "boss shows boss blocks", failures)
+        Dim particleBlocks = BlockRegistry.ForScope(ProgramScope.Particle, False).Select(Function(d) d.TypeId).ToList()
+        AssertTrue(particleBlocks.Contains("particle_set_velocity"), "particle scope has particle blocks", failures)
+        AssertTrue(Not particleBlocks.Contains("fire_ring"), "particle scope hides enemy attack blocks", failures)
+
+        Dim loopStage = ProjectFactory.CreateDemoProject()
+        Dim loopTrack = loopStage.Stage.Tracks.First(Function(t) t.Kind = TrackKind.Background)
+        Dim loopClip As New TimelineClip With {
+            .StartTick = 240,
+            .IsLoopEvent = True,
+            .LoopStartTick = 60,
+            .LoopEndTick = 120,
+            .LoopLength = 60
+        }
+        loopTrack.Clips.Add(loopClip)
+        Dim loopGenerated = VBCodeGenerator.Generate(loopStage, "F:\code\AgSTG")
+        AssertTrue(loopGenerated.BackgroundCode.Contains("AdvanceBackgroundTick"), "background loop clock codegen", failures)
+        AssertTrue(loopGenerated.BackgroundCode.Contains("_bgLoopStart = 60"), "background loop range codegen", failures)
+        Dim validLoopIssues = Validator.Validate(loopStage)
+        AssertTrue(Not validLoopIssues.Any(Function(i) i.Severity = IssueSeverity.[Error] AndAlso i.TargetId = loopClip.Id), "valid loop event passes validation", failures)
+        loopClip.LoopStartTick = 200
+        Dim invalidLoopIssues = Validator.Validate(loopStage)
+        AssertTrue(invalidLoopIssues.Any(Function(i) i.Severity = IssueSeverity.[Error] AndAlso i.TargetId = loopClip.Id), "loop range must be before loop event", failures)
         For Each meshKind In {BackgroundMeshKind.Box, BackgroundMeshKind.Cylinder, BackgroundMeshKind.Sphere, BackgroundMeshKind.Rectangle, BackgroundMeshKind.Triangle}
             Dim geometry = BackgroundGeometry.Build(New BackgroundMesh With {.Kind = meshKind})
             AssertTrue(geometry.Positions.Count > 0 AndAlso geometry.Indices.Count >= 3, "background geometry " & meshKind.ToString(), failures)

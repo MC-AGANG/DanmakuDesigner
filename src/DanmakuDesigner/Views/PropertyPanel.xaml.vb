@@ -370,7 +370,7 @@ Public Class PropertyPanel
         End If
         Host.Children.Add(NumberRow("血量", tmpl.HP, Sub(value) tmpl.HP = Math.Max(1, value)))
         Host.Children.Add(NumberRow("防御 0~1", tmpl.Defence, Sub(value) tmpl.Defence = Math.Max(0, Math.Min(0.95, value))))
-        Host.Children.Add(TextRow("掉落物", tmpl.DropItems, Sub(value) tmpl.DropItems = value, "示例：0011 = 两个 P 点、两个蓝点"))
+        Host.Children.Add(BuildDropItemsEditor(tmpl.DropItems, Sub(value) tmpl.DropItems = value))
         Host.Children.Add(NumberRow("存在时间", tmpl.Life, Sub(value) tmpl.Life = Math.Max(1, CInt(value)), "帧数；超时后淡出"))
         Host.Children.Add(NumberRow("初始速度", tmpl.Speed, Sub(value) tmpl.Speed = Math.Max(0, value), "像素 / 帧"))
         Host.Children.Add(NumberRow("初始方向", tmpl.Direction, Sub(value) tmpl.Direction = value, "0° 向上，顺时针"))
@@ -431,7 +431,7 @@ Public Class PropertyPanel
         Host.Children.Add(NumberRow("符卡 HP", spell.SpellHP, Sub(value) spell.SpellHP = Math.Max(1, value)))
         Host.Children.Add(NumberRow("符卡时间", spell.SpellTime, Sub(value) spell.SpellTime = Math.Max(1, CInt(value))))
         Host.Children.Add(NumberRow("分数", spell.Score, Sub(value) spell.Score = Math.Max(0, CLng(value))))
-        Host.Children.Add(TextRow("掉落物", spell.Items, Sub(value) spell.Items = value))
+        Host.Children.Add(BuildDropItemsEditor(spell.Items, Sub(value) spell.Items = value))
         Host.Children.Add(NumberRow("阶段数", spell.StageCount, Sub(value) spell.StageCount = Math.Max(1, Math.Min(8, CInt(value)))))
 
         Host.Children.Add(BehaviorCard(spell.Behavior, "符卡行为", Sub() App.Session.EditSpellBehavior(spell)))
@@ -685,6 +685,146 @@ Public Class PropertyPanel
         grid.Children.Add(panel)
         border.Child = grid
         Return border
+    End Function
+
+    Private Function BuildDropItemsEditor(current As String, apply As Action(Of String)) As Border
+        Dim counts = DropItemCatalog.Counts(current)
+        Dim card As New Border With {
+            .Background = Ui.Brush("#252526"),
+            .BorderBrush = Ui.Brush("#3F3F46"),
+            .BorderThickness = New Thickness(1),
+            .CornerRadius = New CornerRadius(3),
+            .Padding = New Thickness(10, 8, 10, 9),
+            .Margin = New Thickness(0, 2, 0, 8)
+        }
+        Dim root As New StackPanel()
+
+        Dim header As New Grid()
+        header.ColumnDefinitions.Add(New ColumnDefinition With {.Width = New GridLength(1, GridUnitType.Star)})
+        header.ColumnDefinitions.Add(New ColumnDefinition With {.Width = GridLength.Auto})
+        Dim title = Ui.Label("掉落物", 11, "#E0E0E0")
+        title.FontWeight = FontWeights.SemiBold
+        header.Children.Add(title)
+        Dim total = Ui.Label("共 " & counts.Sum() & " 个", 10, "#8A8A8A")
+        Grid.SetColumn(total, 1)
+        header.Children.Add(total)
+        root.Children.Add(header)
+
+        Dim commit As Action = Sub()
+                                   Dim value = DropItemCatalog.Build(counts)
+                                   If value = DropItemCatalog.Normalize(current) Then Return
+                                   If _committing Then Return
+                                   _committing = True
+                                   Try
+                                       App.Session.BeginEdit()
+                                       apply(value)
+                                       App.Session.CommitEdit()
+                                       Refresh()
+                                   Finally
+                                       _committing = False
+                                   End Try
+                               End Sub
+
+        For Each item In DropItemCatalog.Items
+            Dim index = item.Id
+            Dim row As New Grid With {.Margin = New Thickness(0, 3, 0, 0), .MinHeight = 22}
+            row.ColumnDefinitions.Add(New ColumnDefinition With {.Width = New GridLength(14)})
+            row.ColumnDefinitions.Add(New ColumnDefinition With {.Width = New GridLength(1, GridUnitType.Star)})
+            row.ColumnDefinitions.Add(New ColumnDefinition With {.Width = GridLength.Auto})
+            row.HorizontalAlignment = HorizontalAlignment.Stretch
+
+            Dim swatch As New Border With {
+                .Width = 10,
+                .Height = 10,
+                .CornerRadius = New CornerRadius(2),
+                .Background = Ui.Brush(item.Color),
+                .VerticalAlignment = VerticalAlignment.Center,
+                .HorizontalAlignment = HorizontalAlignment.Left
+            }
+            row.Children.Add(swatch)
+
+            Dim name = Ui.Label(item.Name, 11, "#D4D4D4")
+            name.Margin = New Thickness(2, 0, 4, 0)
+            name.ToolTip = item.Effect
+            name.VerticalAlignment = VerticalAlignment.Center
+            Grid.SetColumn(name, 1)
+            row.Children.Add(name)
+
+            Dim actions As New StackPanel With {
+                .Orientation = Orientation.Horizontal,
+                .VerticalAlignment = VerticalAlignment.Center,
+                .HorizontalAlignment = HorizontalAlignment.Right
+            }
+            Grid.SetColumn(actions, 2)
+
+            Dim box = Ui.MakeTextBox(counts(index).ToString())
+            box.Width = 34
+            box.Height = 22
+            box.TextAlignment = TextAlignment.Center
+            box.HorizontalContentAlignment = HorizontalAlignment.Center
+            box.VerticalContentAlignment = VerticalAlignment.Center
+            box.Margin = New Thickness(0, 0, 3, 0)
+            box.ToolTip = "0 ~ 99；当前 " & item.Effect
+            actions.Children.Add(box)
+
+            Dim minus = MakeButton("−", "VS.Button", Sub()
+                                                          counts(index) = Math.Max(0, counts(index) - 1)
+                                                          commit.Invoke()
+                                                      End Sub)
+            minus.Width = 22
+            minus.Height = 22
+            minus.MinWidth = 0
+            minus.Padding = New Thickness(0)
+            minus.Margin = New Thickness(0, 0, 1, 0)
+            minus.VerticalAlignment = VerticalAlignment.Center
+            actions.Children.Add(minus)
+
+            Dim plus = MakeButton("+", "VS.Button", Sub()
+                                                         counts(index) = Math.Min(99, counts(index) + 1)
+                                                         commit.Invoke()
+                                                     End Sub)
+            plus.Width = 22
+            plus.Height = 22
+            plus.MinWidth = 0
+            plus.Padding = New Thickness(0)
+            plus.Margin = New Thickness(0)
+            plus.VerticalAlignment = VerticalAlignment.Center
+            actions.Children.Add(plus)
+
+            row.Children.Add(actions)
+
+            AddHandler box.LostKeyboardFocus, Sub()
+                                                   Dim parsed As Integer
+                                                   If Integer.TryParse(box.Text, parsed) Then
+                                                       counts(index) = Math.Max(0, Math.Min(99, parsed))
+                                                   End If
+                                                   box.Text = counts(index).ToString()
+                                                   commit.Invoke()
+                                               End Sub
+            AddHandler box.KeyDown, Sub(sender As Object, e As KeyEventArgs)
+                                        If e.Key = Key.Enter Then
+                                            Dim parsed As Integer
+                                            If Integer.TryParse(box.Text, parsed) Then
+                                                counts(index) = Math.Max(0, Math.Min(99, parsed))
+                                            End If
+                                            box.Text = counts(index).ToString()
+                                            commit.Invoke()
+                                            e.Handled = True
+                                        ElseIf e.Key = Key.Escape Then
+                                            box.Text = counts(index).ToString()
+                                            e.Handled = True
+                                        End If
+                                    End Sub
+
+            root.Children.Add(row)
+        Next
+
+        Dim summary = Ui.Label(DropItemCatalog.Describe(current), 10, "#8A8A8A")
+        summary.Margin = New Thickness(0, 7, 0, 0)
+        summary.TextWrapping = TextWrapping.Wrap
+        root.Children.Add(summary)
+        card.Child = root
+        Return card
     End Function
 
     Private Function TextRow(label As String, value As String, apply As Action(Of String), Optional hint As String = "") As Grid

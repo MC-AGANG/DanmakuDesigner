@@ -80,8 +80,8 @@ Namespace Global.DanmakuDesigner.Core
                 If t.Life <= 0 Then issues.Add(Make(IssueSeverity.[Error], "敌机存在时间必须大于 0。", "template", t.Id, t.Name))
                 If t.Defence < 0 OrElse t.Defence >= 1 Then issues.Add(Make(IssueSeverity.Warning, "防御值应在 0 ~ 1 之间。", "template", t.Id, t.Name))
                 For Each ch In t.DropItems
-                    If ch < "0"c OrElse ch > "4"c Then
-                        issues.Add(Make(IssueSeverity.Warning, "掉落物字符串只能包含 0~4：" & t.DropItems, "template", t.Id, t.Name))
+                    If ch < "0"c OrElse ch > "6"c Then
+                        issues.Add(Make(IssueSeverity.Warning, "掉落物字符串只能包含 0~6：" & t.DropItems, "template", t.Id, t.Name))
                         Exit For
                     End If
                 Next

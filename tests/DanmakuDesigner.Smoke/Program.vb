@@ -27,6 +27,11 @@ Module Program
         AssertTrue(parsedDialogue.Lines(1).Speaker = DialogueSpeaker.Enemy, "dialogue csv speaker roundtrip", failures)
         AssertTrue(parsedDialogue.Lines(1).Auto, "dialogue csv auto roundtrip", failures)
 
+        Dim dropCounts = DropItemCatalog.Counts("0011")
+        AssertTrue(dropCounts(0) = 2 AndAlso dropCounts(1) = 2, "drop item counts", failures)
+        AssertTrue(DropItemCatalog.Total("0011") = 4, "drop item total", failures)
+        AssertTrue(DropItemCatalog.Build(New Integer() {2, 2, 0, 0, 0, 0, 0}) = "0011", "drop item build", failures)
+
         Dim legacyBossProject = ProjectFactory.CreateBlankProject("LegacyBoss")
         Dim legacyBoss As New EnemyTemplate With {.Name = "Legacy Boss", .IsBoss = True}
         Dim legacySpell As New BossSpellCard With {.Name = "Legacy Spell"}

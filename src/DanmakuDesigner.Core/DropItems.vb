@@ -23,11 +23,11 @@ Namespace Global.DanmakuDesigner.Core
         Public ReadOnly Items As IReadOnlyList(Of DropItemInfo) = New List(Of DropItemInfo) From {
             New DropItemInfo(0, "P 点", "增加火力", "#E06C75"),
             New DropItemInfo(1, "蓝点", "增加分数", "#61AFEF"),
-            New DropItemInfo(2, "信仰点", "增加信仰值", "#C678DD"),
-            New DropItemInfo(3, "残机", "增加一条生命", "#98C379"),
-            New DropItemInfo(4, "残机碎片", "收集碎片", "#56B6C2"),
-            New DropItemInfo(5, "符卡（B）", "增加符卡数量", "#E5C07B"),
-            New DropItemInfo(6, "符卡碎片", "收集符卡碎片", "#D19A66")
+            New DropItemInfo(2, "信仰点", "增加信仰值", "#ABFF00"),
+            New DropItemInfo(3, "残机", "增加一条生命", "#FF0078"),
+            New DropItemInfo(4, "残机碎片", "收集碎片", "#FF64AD"),
+            New DropItemInfo(5, "符卡（B）", "增加符卡数量", "#12FF00"),
+            New DropItemInfo(6, "符卡碎片", "收集符卡碎片", "#0DBE00")
         }
 
         Public Function Find(id As Integer) As DropItemInfo

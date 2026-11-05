@@ -4,16 +4,13 @@
 
 界面模仿 Visual Studio 2017 深色主题，关卡按时间轴编排，敌机与子弹的行为用类似 Scratch 的积木拖拽编写，并内置使用 AgSTG 真实贴图的试玩预览。编辑器可以直接导出**可编译的 VB.NET 关卡工程**，但**不会修改 AgSTG 引擎本体**。
 
-![时间轴](docs/screenshots/timeline.png)
 
 ## 功能特性
 
-- **Visual Studio 深色主题**：菜单、工具栏、文档标签、资源管理器、属性、输出、状态栏均按 VS 2017 Dark 的配色与会话结构设计。
-- **状态联动外发光**：窗口四周的外发光与底部状态栏同步变色——启动紫色、打开工程蓝色、预览运行橙色、窗口失焦灰色；切换带 240ms 颜色过渡。
-- **官方 UI 图标**：全部图标取自 `VS2017 Image Library`（16px），按 VS 的工具栏 / 面板语义使用；标题栏按钮使用旧版 16px 位图素材，最大化时自动切换为还原图标。
+- **Visual Studio 深色主题**：菜单、工具栏、文档标签、资源管理器、属性、输出、状态栏均按 VS 2017 Dark 的配色与会话结构设计
 - **多关卡游戏工程**：一个 `.dmkproj` 管理多个关卡，资源管理器中可切换、新建、复制、重命名和删除关卡；切换关卡不会丢失当前编辑状态。
 - **游戏资源管理器**：新增「游戏资源」文档页，可导入/预览/移除跨关卡共享的图片与音频资源，资源路径保存在工程内。
-- **背景编辑与 3D 建模**：新增「背景编辑」标签页，可添加 2D / 3D 背景图层；3D 图层提供独立的建模工具，可添加长方体、圆柱体、球体、矩形面和三角形面。
+- **背景编辑与 3D 建模**：新增「背景编辑」标签页，可添加 2D / 3D 背景图层；3D 图层提供独立的建模工具，支持简单几何体和几何面的添加。
 - **背景关键帧动画**：时间轴用关键帧控制 3D 摄像机、2D 图层位移/缩放/透明度和粒子速度；3D 关键帧提供独立视角选择窗口。
 - **Boss 模板**：敌机模板可切换为 Boss，在属性面板设置 Boss 名称，通过「普通贴图」「移动贴图」按钮选择动画贴图，并通过双列表选择符卡及战斗顺序。
 - **掉落物编辑**：敌机模板和符卡属性中的掉落物改为按类型显示数量（P 点、蓝点、信仰点、残机、残机碎片、符卡、符卡碎片），支持直接输入或 `+` / `−` 调整，不再需要手写数字字符串。
@@ -62,17 +59,7 @@
 
 ## 快速开始
 
-```powershell
-# 在 F:\code\DanmakuDesigner 下
-dotnet build DanmakuDesigner.slnx
-dotnet run --project src\DanmakuDesigner\DanmakuDesigner.vbproj
-```
-
-也可以直接运行已经构建好的：
-
-```powershell
-src\DanmakuDesigner\bin\Debug\net10.0-windows\DanmakuDesigner.exe
-```
+可以在Release中寻找最新构建版本
 
 启动后**不会自动打开任何工程**，工作区只显示 VS 深色窗口背景。使用 `文件 → 新建工程` 或 `文件 → 打开工程…` 开始编辑；`文件 → 关闭项目` 可回到空白工作区。开发/自动化场景可用 `--open <file>` 显式打开工程。
 
@@ -176,7 +163,6 @@ src\DanmakuDesigner\bin\Debug\net10.0-windows\DanmakuDesigner.exe
 - 预览使用编辑器内置解释器，与导出 VB 代码共享同一套积木语义；引擎模式下则直接使用 AgSTG 运行。
 - 调试模式不显示残机、擦弹和单独的敌机/子弹数量；实体数直接读取 `STG.Objects.Count`，并显示 FPS 与帧耗时曲线。被弹不会因残机耗尽而结束。
 
-> 预览区背景当前固定为**纯黑**，避免背景画面干扰弹幕判读；关卡背景统一在「背景编辑」中配置。
 
 ### 引擎预览
 
@@ -421,7 +407,6 @@ DanmakuDesigner.exe --export D:\Temp\GameExport
 
 ## 已知限制 / 路线图
 
-- 暂不支持 Boss / 符卡（`Enemy.Boss` + `SpellCard`）时间轴编辑；需要时可先用导出的 VB 代码手工补充。
 - 暂不支持音频试听；音乐事件选择音频资源并单独填写曲名，导出 `Stage.Showmusic(曲名)`。
 - 一个工程对应一个关卡；多关卡工程、复制/粘贴跨行为脚本尚未实现。
 - 变量只支持数值；没有列表/字符串变量。
@@ -429,10 +414,9 @@ DanmakuDesigner.exe --export D:\Temp\GameExport
 
 ## 素材与致谢
 
-- 引擎：[AgSTG](https://github.com/MC-AGANG/AgSTG)，作者 MC-AGANG。
+- 引擎：[AgSTG](https://github.com/MC-AGANG/AgSTG)，本项目为这个引擎的配套项目。
 - UI 图标：Microsoft **Visual Studio 2017 Image Library**（`VS2017`），仅用于界面展示。
-- 弹幕/敌机贴图：来自 AgSTG 的 `ResourcePack` 基础资源包；Boss 贴图来自本工程导入的图片资源。
-- 标题栏位图按钮：来自旧版 DanmakuDesigner 的 `ResourcePack.DD\Resources`。
+- 弹幕/敌机贴图：版权归上海爱丽丝幻乐团所有，仅用于功能展示。
 - 示例游戏中的音乐名与东方 Project 相关名称仅用于同人示例。
 
 本工具仅生成引用引擎的代码，不修改 AgSTG 引擎本体。请遵守 AgSTG 与相关素材的授权约定。

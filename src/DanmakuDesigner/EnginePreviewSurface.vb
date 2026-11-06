@@ -112,7 +112,7 @@ Public Class EnginePreviewSurface
             For Each resource In App.Session.Project.Resources
                 If resource Is Nothing Then Continue For
                 If resource.Kind = GameResourceKind.Audio Then audioNames(resource.Id) = resource.Name
-                If resource.Kind <> GameResourceKind.Image Then Continue For
+                If resource.Kind <> GameResourceKind.Image AndAlso resource.Kind <> GameResourceKind.Audio Then Continue For
                 Dim fullPath = IO.Path.Combine(App.Session.ProjectDirectory, resource.RelativePath.Replace("/"c, "\"c))
                 If IO.File.Exists(fullPath) Then resourceUris(resource.Id) = New Uri(fullPath).AbsoluteUri
             Next

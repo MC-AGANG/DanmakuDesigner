@@ -140,6 +140,7 @@ Module Program
         AssertTrue(generated.Code.Contains("BulletType.环弹"), "generated bullet type", failures)
         AssertTrue(generated.Code.Contains("Enemy.Boss"), "generated boss type", failures)
         AssertTrue(generated.Code.Contains("Private _boss As Enemy.Boss"), "generated boss reference", failures)
+        AssertTrue(generated.Code.Contains("Boss.IsEnabled = True"), "boss stays targetable during active phase", failures)
         AssertTrue(Not generated.Code.Contains("Host.Ticks >= 65 AndAlso Boss.CurrentSpell = -1"), "boss waits for explicit start", failures)
         AssertTrue(generated.Code.Contains("Boss.SpellCards.Add"), "generated boss spell setup", failures)
         AssertTrue(generated.Code.Contains("Private Sub SP0_0()"), "generated spell behavior method", failures)
@@ -183,6 +184,45 @@ Module Program
         atSpellSpell.Behavior.Scripts.Add(atSpellScript)
         Dim atSpellGenerated = VBCodeGenerator.Generate(atSpellProject, "F:\code\AgSTG")
         AssertTrue(atSpellGenerated.Code.Contains(".AtSpell"), "atspell condition codegen", failures)
+
+        Dim bossMoveProject = ProjectFactory.CreateDemoProject()
+        Dim bossMoveTemplate = bossMoveProject.Stage.EnemyTemplates.First(Function(t) t.IsBoss)
+        bossMoveTemplate.Speed = 2
+        bossMoveTemplate.Direction = 180
+        bossMoveTemplate.Behavior.Scripts.Clear()
+        Dim bossMoveScript = BlockRegistry.CreateBlock("every_frame", bossMoveProject.Stage)
+        Dim bossMoveSpeed = BlockRegistry.CreateBlock("set_speed", bossMoveProject.Stage)
+        bossMoveSpeed.SetField("speed", "2")
+        Dim bossMoveDirection = BlockRegistry.CreateBlock("set_direction", bossMoveProject.Stage)
+        bossMoveDirection.SetField("direction", "180")
+        bossMoveScript.Children.Add(bossMoveSpeed)
+        bossMoveScript.Children.Add(bossMoveDirection)
+        bossMoveTemplate.Behavior.Scripts.Add(bossMoveScript)
+        Dim bossMoveGenerated = VBCodeGenerator.Generate(bossMoveProject, "F:\code\AgSTG")
+        AssertTrue(bossMoveGenerated.Code.Contains("e.Speed = 2"), "boss template speed applied", failures)
+        AssertTrue(bossMoveGenerated.Code.Contains("e.Direction = 180"), "boss template direction applied", failures)
+        AssertTrue(bossMoveGenerated.Code.Contains("bh.EnableManualMovement()"), "boss template movement enabled", failures)
+        AssertTrue(bossMoveGenerated.Code.Contains("_bossManualMove = True"), "boss speed enables manual movement", failures)
+        AssertTrue(bossMoveGenerated.Code.Contains("Host.Y -= Host.Speed * Math.Cos"), "boss manual movement codegen", failures)
+
+        Dim musicProject = ProjectFactory.CreateDemoProject()
+        Dim musicTemplate = musicProject.Stage.EnemyTemplates.First()
+        musicTemplate.Behavior.Scripts.Clear()
+        Dim musicScript = BlockRegistry.CreateBlock("every_frame", musicProject.Stage)
+        Dim musicBlock = BlockRegistry.CreateBlock("play_music", musicProject.Stage)
+        musicBlock.SetField("music", "res_music")
+        musicBlock.SetField("title", "Test Song")
+        musicScript.Children.Add(musicBlock)
+        musicTemplate.Behavior.Scripts.Add(musicScript)
+        Dim musicUris As New Dictionary(Of String, String) From {
+            {"res_music", "pack://application:,,,/GameResources;component/Resources/res_music.mp3"}
+        }
+        Dim musicGenerated = VBCodeGenerator.Generate(musicProject, "F:\code\AgSTG", musicUris)
+        AssertTrue(musicGenerated.Code.Contains("PlayStageMusic("), "stage music playback codegen", failures)
+        AssertTrue(musicGenerated.Code.Contains("res_music.mp3"), "stage music resource uri codegen", failures)
+        AssertTrue(musicGenerated.Code.Contains("ManagedBass.Bass.CreateStream"), "stage music uses ManagedBass", failures)
+        AssertTrue(musicGenerated.Code.Contains("STG.CurrentMusic = _musicHandle"), "stage music exposes pause handle", failures)
+        AssertTrue(musicGenerated.Code.Contains("STG.CurrentMusic = 0"), "stage music clears pause handle", failures)
 
         Dim outDir = Path.Combine(Path.GetTempPath(), "dd_smoke_export")
         If Directory.Exists(outDir) Then Directory.Delete(outDir, True)

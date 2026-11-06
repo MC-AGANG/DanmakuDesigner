@@ -144,7 +144,10 @@ Public Module SolutionExportService
         If File.Exists(title) Then
             Dim text = File.ReadAllText(title)
             text = Regex.Replace(text, "(?s)((?:Public|Private) Sub Page_ActivatedChanged.*?If Activated Then\s*)",
-                                 "$1" & Environment.NewLine & "            MW.StartTitleMusic()" & Environment.NewLine)
+                                 "$1" & Environment.NewLine &
+                                 "            If STG.CurrentMusic <> 0 Then ManagedBass.Bass.ChannelStop(STG.CurrentMusic)" & Environment.NewLine &
+                                 "            STG.CurrentMusic = 0" & Environment.NewLine &
+                                 "            MW.StartTitleMusic()" & Environment.NewLine)
             text = Regex.Replace(text, "(?s)((?:Public|Private) Sub Page_ActivatedChanged.*?Else\s*)",
                                  "$1" & Environment.NewLine & "            MW.StopTitleMusic()" & Environment.NewLine)
             text = text.Replace("        STG.ReplayMode = False" & Environment.NewLine & "        Page.Activated = False",

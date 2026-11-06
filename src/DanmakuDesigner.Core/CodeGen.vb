@@ -137,8 +137,10 @@ Namespace Global.DanmakuDesigner.Core
             code.Line("Private BG As " & _className & "bg")
             code.Line("Private _cleared As Boolean")
             code.Line("Private _boss As Enemy.Boss")
+            code.Line("Private Shared _musicHandle As Integer = 0")
             code.Line()
             EmitConstructor(code)
+            EmitStageMusic(code)
             EmitReset(code)
             EmitAction(code)
             EmitSpawnTimeline(code)
@@ -237,6 +239,53 @@ Namespace Global.DanmakuDesigner.Core
             w.Line()
         End Sub
 
+        Private Sub EmitStageMusic(w As CodeWriter)
+            w.Open("Public Shared Sub PlayStageMusic(uri As String, title As String)")
+            w.Line("Showmusic(title)")
+            w.Line("If String.IsNullOrWhiteSpace(uri) Then Return")
+            w.Line("Try")
+            w.Open("If _musicHandle <> 0 Then")
+            w.Line("ManagedBass.Bass.ChannelStop(_musicHandle)")
+            w.Line("_musicHandle = 0")
+            w.Close("End If")
+            w.Line("Dim bytes As Byte() = Nothing")
+            w.Open("If uri.StartsWith(""pack:"", StringComparison.OrdinalIgnoreCase) Then")
+            w.Line("Dim info = System.Windows.Application.GetResourceStream(New System.Uri(uri, System.UriKind.Absolute))")
+            w.Line("If info Is Nothing Then Return")
+            w.Line("Using ms As New System.IO.MemoryStream()")
+            w.Line("    info.Stream.CopyTo(ms)")
+            w.Line("    bytes = ms.ToArray()")
+            w.Line("End Using")
+            w.Close("Else")
+            w.Line("Dim localPath = New System.Uri(uri).LocalPath")
+            w.Line("If Not System.IO.File.Exists(localPath) Then Return")
+            w.Line("bytes = System.IO.File.ReadAllBytes(localPath)")
+            w.Close("End If")
+            w.Line("If bytes Is Nothing OrElse bytes.Length = 0 Then Return")
+            w.Line("_musicHandle = ManagedBass.Bass.CreateStream(bytes, 0, bytes.Length, ManagedBass.BassFlags.Loop)")
+            w.Line("If _musicHandle <> 0 Then")
+            w.Line("    ManagedBass.Bass.ChannelPlay(_musicHandle, True)")
+            w.Line("    STG.CurrentMusic = _musicHandle")
+            w.Line("End If")
+            w.Line("Catch")
+            w.Line("End Try")
+            w.Close("End Sub")
+            w.Line()
+            w.Open("Public Shared Sub StopStageMusic()")
+            w.Line("If _musicHandle = 0 Then")
+            w.Line("    STG.CurrentMusic = 0")
+            w.Line("    Return")
+            w.Line("End If")
+            w.Line("Try")
+            w.Line("    ManagedBass.Bass.ChannelStop(_musicHandle)")
+            w.Line("Catch")
+            w.Line("End Try")
+            w.Line("_musicHandle = 0")
+            w.Line("STG.CurrentMusic = 0")
+            w.Close("End Sub")
+            w.Line()
+        End Sub
+
         Private Sub EmitReset(w As CodeWriter)
             w.Open("Public Overrides Sub Initialize()")
             w.Line("Reset()")
@@ -248,6 +297,7 @@ Namespace Global.DanmakuDesigner.Core
             w.Line("BG = DirectCast(Background, " & _className & "bg)")
             w.Line("_cleared = False")
             w.Line("_boss = Nothing")
+            w.Line("StopStageMusic()")
             w.Close("End Sub")
             w.Line()
         End Sub
@@ -320,7 +370,14 @@ Namespace Global.DanmakuDesigner.Core
                     Dim tick = Math.Max(0, clip.StartTick)
                     Select Case clip.Cue
                         Case CueKind.Music
-                            w.Line("If Ticks = " & tick & " Then Stage.Showmusic(" & VBCodeGenerator.Quote(clip.CueText) & ")")
+                            Dim cueResourceId = ResolveCueMusicResourceId(clip)
+                            Dim title = If(clip.CueText, "").Trim()
+                            Dim cueResourceName As String = Nothing
+                            If _audioNames IsNot Nothing AndAlso _audioNames.TryGetValue(cueResourceId, cueResourceName) Then
+                                If String.IsNullOrWhiteSpace(title) Then title = cueResourceName
+                            End If
+                            If String.IsNullOrWhiteSpace(title) Then title = "音乐"
+                            w.Line("If Ticks = " & tick & " Then PlayStageMusic(" & VBCodeGenerator.Quote(MusicUri(cueResourceId)) & ", " & VBCodeGenerator.Quote(title) & ")")
                         Case CueKind.ClearBullets
                             w.Line("If Ticks = " & tick & " Then STG.ClearBullet()")
                         Case CueKind.Shake
@@ -390,6 +447,8 @@ Namespace Global.DanmakuDesigner.Core
             Dim typeInfo = EngineCatalog.EnemyType(template.EnemyType)
             If template.IsBoss Then
                 w.Line("Dim e As New Enemy.Boss(CByte(" & template.BossId.ToString(CultureInfo.InvariantCulture) & "), px, py)")
+                w.Line("e.Speed = " & VBCodeGenerator.Num(template.Speed))
+                w.Line("e.Direction = " & VBCodeGenerator.Num(template.Direction))
             Else
                 w.Line("Dim e As New Enemy(EnemyType." & typeInfo.Name & ", CByte(" & template.Color & "), px, py, " &
                        VBCodeGenerator.Num(template.HP) & ", " & VBCodeGenerator.Quote(If(template.DropItems, "")) & ", " &
@@ -399,7 +458,10 @@ Namespace Global.DanmakuDesigner.Core
             Dim info As BehaviorInfo = Nothing
             If _enemyBehaviors.TryGetValue(template.Id, info) AndAlso info.HasBehavior Then
                 w.Line("Dim bh As New " & info.ClassName & "(e, " & VBCodeGenerator.Num(template.HP) & ")")
-                If template.IsBoss Then w.Line("e.Init = AddressOf bh.Init")
+                If template.IsBoss Then
+                    w.Line("e.Init = AddressOf bh.Init")
+                    w.Line("bh.EnableManualMovement()")
+                End If
                 w.Line("e.Act = AddressOf bh.Tick")
             End If
             If template.IsBoss Then w.Line("_boss = e")
@@ -496,6 +558,26 @@ Namespace Global.DanmakuDesigner.Core
                 End If
             Next
         End Sub
+
+        Private Function ResolveCueMusicResourceId(clip As TimelineClip) As String
+            If clip Is Nothing Then Return ""
+            If Not String.IsNullOrWhiteSpace(clip.CueResourceId) Then Return clip.CueResourceId
+            If _audioNames Is Nothing OrElse _audioNames.Count = 0 Then Return ""
+            Dim title = If(clip.CueText, "").Trim()
+            If Not String.IsNullOrWhiteSpace(title) Then
+                For Each pair In _audioNames
+                    If String.Equals(pair.Value, title, StringComparison.OrdinalIgnoreCase) Then Return pair.Key
+                Next
+            End If
+            Return _audioNames.Keys.First()
+        End Function
+
+        Private Function MusicUri(resourceId As String) As String
+            If String.IsNullOrWhiteSpace(resourceId) OrElse _resourceUris Is Nothing Then Return ""
+            Dim uri As String = Nothing
+            If _resourceUris.TryGetValue(resourceId, uri) AndAlso Not String.IsNullOrWhiteSpace(uri) Then Return uri
+            Return ""
+        End Function
 
         Private Function BuildBackgroundXaml() As String
             If _stage.BackgroundLayers.Count > 0 Then
@@ -630,6 +712,7 @@ Namespace Global.DanmakuDesigner.Core
             w.Open("Friend Class " & _info.ClassName)
             w.Line("Private ReadOnly Host As " & hostType)
             If _info.BossTemplate IsNot Nothing Then w.Line("Private ReadOnly Boss As Enemy.Boss")
+            If _info.BossTemplate IsNot Nothing Then w.Line("Private _bossManualMove As Boolean")
             If _info.Scope = ProgramScope.Enemy Then w.Line("Private ReadOnly MaxHP As Double")
             w.Line("Private Halted As Boolean")
             For i = 0 To _info.Program.Scripts.Count - 1
@@ -656,6 +739,12 @@ Namespace Global.DanmakuDesigner.Core
             If _info.Scope = ProgramScope.Enemy Then w.Line("Me.MaxHP = maxHp")
             w.Close("End Sub")
             w.Line()
+            If _info.BossTemplate IsNot Nothing Then
+                w.Open("Public Sub EnableManualMovement()")
+                w.Line("_bossManualMove = True")
+                w.Close("End Sub")
+                w.Line()
+            End If
 
             If _info.BossTemplate IsNot Nothing Then EmitBossInit(w)
             EmitTick(w)
@@ -727,10 +816,19 @@ Namespace Global.DanmakuDesigner.Core
             Return _varMap(key)
         End Function
 
+        Private Sub MarkBossManualMove(w As CodeWriter)
+            If _info.BossTemplate IsNot Nothing Then w.Line("_bossManualMove = True")
+        End Sub
+
         Private Sub EmitTick(w As CodeWriter)
             w.Open("Public Sub Tick()")
             w.Line("If Halted Then Return")
             If _needsTimer Then w.Line("RunTimers()")
+            If _info.BossTemplate IsNot Nothing Then
+                w.Open("If Boss.CurrentSpell >= 0 AndAlso Boss.CurrentSpell < Boss.SpellCards.Count AndAlso Boss.SpellCards(Boss.CurrentSpell).IsEnabled Then")
+                w.Line("Boss.IsEnabled = True")
+                w.Close("End If")
+            End If
             For i = 0 To _info.Program.Scripts.Count - 1
                 Dim script = _info.Program.Scripts(i)
                 Dim def = script.Definition
@@ -751,6 +849,12 @@ Namespace Global.DanmakuDesigner.Core
                 EmitHatCall(w, script, i, def)
             Next
             EmitSpellProgramTicks(w)
+            If _info.BossTemplate IsNot Nothing Then
+                w.Open("If _bossManualMove Then")
+                w.Line("Host.X += Host.Speed * Math.Sin(Host.Direction / 180.0 * Math.PI)")
+                w.Line("Host.Y -= Host.Speed * Math.Cos(Host.Direction / 180.0 * Math.PI)")
+                w.Close("End If")
+            End If
             w.Close("End Sub")
             w.Line()
         End Sub
@@ -1086,31 +1190,42 @@ Namespace Global.DanmakuDesigner.Core
                         w.Line("End If")
                     End If
                 Case "play_music"
+                    Dim musicId = block.GetField("music")
                     Dim musicTitle = If(block.GetField("title"), "").Trim()
-                    If String.IsNullOrWhiteSpace(musicTitle) Then
-                        Dim musicId = block.GetField("music")
-                        Dim resourceName As String = Nothing
-                        If _info.AudioNames IsNot Nothing AndAlso _info.AudioNames.TryGetValue(musicId, resourceName) Then musicTitle = resourceName
+                    Dim resourceName As String = Nothing
+                    If _info.AudioNames IsNot Nothing AndAlso _info.AudioNames.TryGetValue(musicId, resourceName) Then
+                        If String.IsNullOrWhiteSpace(musicTitle) Then musicTitle = resourceName
                     End If
-                    If Not String.IsNullOrWhiteSpace(musicTitle) Then
-                        w.Line("Stage.Showmusic(" & VBCodeGenerator.Quote(musicTitle) & ")")
+                    If String.IsNullOrWhiteSpace(musicTitle) Then musicTitle = "音乐"
+                    Dim musicUri As String = ""
+                    If _info.ResourceUris IsNot Nothing Then
+                        Dim mapped As String = Nothing
+                        If _info.ResourceUris.TryGetValue(musicId, mapped) Then musicUri = If(mapped, "")
                     End If
+                    Dim stageClass = VBCodeGenerator.SanitizeIdentifier(_stage.CodeName, "StageCustom")
+                    w.Line(stageClass & ".PlayStageMusic(" & VBCodeGenerator.Quote(musicUri) & ", " & VBCodeGenerator.Quote(musicTitle) & ")")
                 Case "set_var"
                     w.Line(VarField(block.GetField("name")) & " = " & EmitValue(block.GetField("value")))
                 Case "add_var"
                     w.Line(VarField(block.GetField("name")) & " += " & EmitValue(block.GetField("value")))
                 Case "set_speed"
                     w.Line("Host.Speed = " & EmitValue(block.GetField("speed")))
+                    MarkBossManualMove(w)
                 Case "add_speed"
                     w.Line("Host.Speed += " & EmitValue(block.GetField("delta")))
+                    MarkBossManualMove(w)
                 Case "set_direction"
                     w.Line("Host.Direction = " & EmitValue(block.GetField("direction")))
+                    MarkBossManualMove(w)
                 Case "add_direction"
                     w.Line("Host.Direction += " & EmitValue(block.GetField("delta")))
+                    MarkBossManualMove(w)
                 Case "random_direction"
                     w.Line("Host.Direction = " & EmitValue(block.GetField("min")) & " + Rnd() * (" & EmitValue(block.GetField("max")) & " - " & EmitValue(block.GetField("min")) & ")")
+                    MarkBossManualMove(w)
                 Case "aim_player"
                     w.Line("Host.Direction = System.Windows.Vector.AngleBetween(New System.Windows.Vector(0, -1), New System.Windows.Vector(STG.Player.X - Host.X, STG.Player.Y - Host.Y)) + " & EmitValue(block.GetField("offset")))
+                    MarkBossManualMove(w)
                 Case "move_to"
                     Dim dx = NextLocal("dx")
                     Dim dy = NextLocal("dy")
@@ -1118,6 +1233,7 @@ Namespace Global.DanmakuDesigner.Core
                     w.Line("Dim " & dy & " As Double = " & EmitValue(block.GetField("y")) & " - Host.Y")
                     w.Line("Host.Direction = System.Windows.Vector.AngleBetween(New System.Windows.Vector(0, -1), New System.Windows.Vector(" & dx & ", " & dy & "))")
                     w.Line("Host.Speed = Math.Sqrt(" & dx & " * " & dx & " + " & dy & " * " & dy & ") / Math.Max(1.0, CDbl(" & EmitValue(block.GetField("frames")) & "))")
+                    MarkBossManualMove(w)
                 Case "move_center"
                     Dim dx = NextLocal("dx")
                     Dim dy = NextLocal("dy")
@@ -1125,6 +1241,7 @@ Namespace Global.DanmakuDesigner.Core
                     w.Line("Dim " & dy & " As Double = 128.0 - Host.Y")
                     w.Line("Host.Direction = System.Windows.Vector.AngleBetween(New System.Windows.Vector(0, -1), New System.Windows.Vector(" & dx & ", " & dy & "))")
                     w.Line("Host.Speed = Math.Sqrt(" & dx & " * " & dx & " + " & dy & " * " & dy & ") / Math.Max(1.0, CDbl(" & EmitValue(block.GetField("frames")) & "))")
+                    MarkBossManualMove(w)
                 Case "set_position"
                     w.Line("Host.X = " & EmitValue(block.GetField("x")))
                     w.Line("Host.Y = " & EmitValue(block.GetField("y")))

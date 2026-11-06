@@ -86,6 +86,7 @@ Public Module EngineStageCompiler
             GetType(AgSTG.Stage),
             GetType(ResourcePack.Textures),
             GetType(ResourcePack.TH07.Textures),
+            GetType(ManagedBass.Bass),
             GetType(System.Windows.UIElement),
             GetType(System.Linq.Enumerable),
             GetType(Microsoft.VisualBasic.Constants),

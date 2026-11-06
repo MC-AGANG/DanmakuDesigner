@@ -108,6 +108,10 @@ Public Class PreviewPanel
             _engineSurface.LoadStage(stageProject, App.Session.EngineRepo)
         Catch ex As Exception
             _engineError = ex.Message
+            Try
+                IO.File.WriteAllText(IO.Path.Combine(IO.Path.GetTempPath(), "DanmakuDesigner-engine-error.log"), ex.ToString())
+            Catch
+            End Try
             App.Session.AddLog(IssueSeverity.Warning, "引擎预览失败：" & ex.ToString())
             _engineSurface.Visibility = Visibility.Collapsed
             Renderer.Visibility = Visibility.Visible

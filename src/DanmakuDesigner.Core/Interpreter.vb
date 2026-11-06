@@ -352,6 +352,7 @@ Namespace Global.DanmakuDesigner.Core
 
         Private Function EvalCondition(block As BlockNode) As Boolean
             Dim subj = block.GetField("subj")
+            If subj = "atspell" Then Return Owner.BossSpellIndex >= 0
             Dim left As Double
             Dim right = EvalValue(block.GetField("value"))
             Select Case subj

@@ -70,14 +70,24 @@ Public Class App
     End Sub
 
     Private Sub App_DispatcherUnhandledException(sender As Object, e As DispatcherUnhandledExceptionEventArgs)
+        e.Handled = True
         LogStartup("UNHANDLED: " & e.Exception.ToString())
+        Try
+            IO.File.AppendAllText(IO.Path.Combine(IO.Path.GetTempPath(), "DanmakuDesigner-crash.log"),
+                                  DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff") & Environment.NewLine &
+                                  e.Exception.ToString() & Environment.NewLine & Environment.NewLine)
+        Catch
+        End Try
         Try
             Session.AddLog(IssueSeverity.[Error], "未处理的异常：" & e.Exception.Message)
         Catch
         End Try
-        MessageBox.Show("发生未处理的错误：" & vbCrLf & vbCrLf & e.Exception.ToString(),
-                        "DanmakuDesigner", MessageBoxButton.OK, MessageBoxImage.[Error])
-        e.Handled = True
+        Try
+            MessageBox.Show("发生未处理的错误：" & vbCrLf & vbCrLf & e.Exception.ToString(),
+                            "DanmakuDesigner", MessageBoxButton.OK, MessageBoxImage.[Error])
+        Catch
+            ' 调度器正在关闭或已经暂停时，错误对话框本身也可能失败；不要再次进入异常处理。
+        End Try
     End Sub
 
     Private Function ArgValue(args As String(), name As String) As String

@@ -109,9 +109,8 @@ Namespace Global.DanmakuDesigner.Core
                     issues.Add(Make(IssueSeverity.Warning, "对话没有任何内容。", "dialogue", dialogue.Id, dialogue.Name))
                 End If
                 If dialogue.AfterAction = DialogueAfterAction.StartBoss Then
-                    Dim bossTemplate = stage.FindTemplate(dialogue.BossTemplateId)
-                    If bossTemplate Is Nothing OrElse Not bossTemplate.IsBoss Then
-                        issues.Add(Make(IssueSeverity.Warning, "对话结束后要 Boss 开打，但没有选择有效的 Boss 模板。", "dialogue", dialogue.Id, dialogue.Name))
+                    If Not stage.EnemyTemplates.Any(Function(t) t IsNot Nothing AndAlso t.IsBoss) Then
+                        issues.Add(Make(IssueSeverity.Warning, "对话结束后要 Boss 开打，但关卡里还没有 Boss 模板。", "dialogue", dialogue.Id, dialogue.Name))
                     End If
                 End If
             Next

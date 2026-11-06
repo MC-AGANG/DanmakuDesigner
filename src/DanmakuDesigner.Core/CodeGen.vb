@@ -136,6 +136,7 @@ Namespace Global.DanmakuDesigner.Core
             code.Line("Inherits Stage")
             code.Line("Private BG As " & _className & "bg")
             code.Line("Private _cleared As Boolean")
+            code.Line("Private _boss As Enemy.Boss")
             code.Line()
             EmitConstructor(code)
             EmitReset(code)
@@ -246,6 +247,7 @@ Namespace Global.DanmakuDesigner.Core
             w.Line("Background = New " & _className & "bg()")
             w.Line("BG = DirectCast(Background, " & _className & "bg)")
             w.Line("_cleared = False")
+            w.Line("_boss = Nothing")
             w.Close("End Sub")
             w.Line()
         End Sub
@@ -400,6 +402,7 @@ Namespace Global.DanmakuDesigner.Core
                 If template.IsBoss Then w.Line("e.Init = AddressOf bh.Init")
                 w.Line("e.Act = AddressOf bh.Tick")
             End If
+            If template.IsBoss Then w.Line("_boss = e")
             w.Line("STG.Add(e)")
             w.Close("End Sub")
             w.Line()
@@ -412,8 +415,10 @@ Namespace Global.DanmakuDesigner.Core
                 Dim finishedName = DialogueFinishedMethodName(dialogue.Id)
                 w.Open("Public Sub " & methodName & "()")
                 w.Line("If STG.DialogArea Is Nothing Then Return")
-                w.Line("Dim csv As String = " & VBCodeGenerator.Quote(DialogueCsv.ToCsv(dialogue)))
-                Dim maxIllustration = -1
+                Dim illustrationMap = DialogueCsv.BuildIllustrationMap(dialogue)
+                w.Line("Dim csv As String = " & VBCodeGenerator.Quote(DialogueCsv.ToCsv(dialogue, illustrationMap)))
+                Dim maxIllustration = Math.Max(Math.Max(0, illustrationMap.PlayerIds.Count - 1),
+                                               Math.Max(0, illustrationMap.EnemyIds.Count - 1))
                 For Each line In dialogue.Lines
                     If line IsNot Nothing Then maxIllustration = Math.Max(maxIllustration, Math.Max(0, line.Illustration))
                 Next
@@ -421,8 +426,10 @@ Namespace Global.DanmakuDesigner.Core
                     w.Line("Dim playerImages(" & maxIllustration & ") As System.Windows.Media.ImageBrush")
                     w.Line("Dim enemyImages(" & maxIllustration & ") As System.Windows.Media.ImageBrush")
                     For i = 0 To maxIllustration
-                        w.Line("playerImages(" & i & ") = New System.Windows.Media.ImageBrush()")
-                        w.Line("enemyImages(" & i & ") = New System.Windows.Media.ImageBrush()")
+                        Dim playerImage = If(i < illustrationMap.PlayerIds.Count, DialogueImageExpression(illustrationMap.PlayerIds(i)), "New System.Windows.Media.ImageBrush()")
+                        Dim enemyImage = If(i < illustrationMap.EnemyIds.Count, DialogueImageExpression(illustrationMap.EnemyIds(i)), "New System.Windows.Media.ImageBrush()")
+                        w.Line("playerImages(" & i & ") = " & playerImage)
+                        w.Line("enemyImages(" & i & ") = " & enemyImage)
                     Next
                 Else
                     w.Line("Dim playerImages As System.Windows.Media.ImageBrush() = New System.Windows.Media.ImageBrush() {}")
@@ -431,6 +438,8 @@ Namespace Global.DanmakuDesigner.Core
                 w.Line("STG.DialogArea.LoadPlayer(playerImages)")
                 w.Line("STG.DialogArea.LoadEnemy(enemyImages)")
                 w.Line("Dim reader As New System.IO.StreamReader(New System.IO.MemoryStream(System.Text.Encoding.UTF8.GetBytes(csv)))")
+                w.Line("reader.ReadLine()")
+                w.Line("reader.ReadLine()")
                 w.Line("STG.DialogArea.LoadDialog(reader)")
                 w.Line("AddHandler STG.DialogArea.Changed, AddressOf " & finishedName)
                 w.Line("STG.DialogArea.Show()")
@@ -443,20 +452,27 @@ Namespace Global.DanmakuDesigner.Core
                 If dialogue.AfterAction = DialogueAfterAction.NextStage Then
                     w.Line("If STG.CurrentStage >= 0 AndAlso STG.CurrentStage < STG.Stages.Count Then STG.Stages(STG.CurrentStage).Clear()")
                 ElseIf dialogue.AfterAction = DialogueAfterAction.StartBoss Then
-                    Dim template = _stage.FindTemplate(dialogue.BossTemplateId)
-                    Dim info As BehaviorInfo = Nothing
-                    If template IsNot Nothing AndAlso template.IsBoss AndAlso _enemyBehaviors.TryGetValue(template.Id, info) Then
-                        w.Line("Dim e As New Enemy.Boss(CByte(" & template.BossId.ToString(CultureInfo.InvariantCulture) & "), 192, -32)")
-                        w.Line("Dim bh As New " & info.ClassName & "(e, " & VBCodeGenerator.Num(template.HP) & ")")
-                        w.Line("e.Init = AddressOf bh.Init")
-                        w.Line("e.Act = AddressOf bh.Tick")
-                        w.Line("STG.Add(e)")
-                    End If
+                    w.Line("If _boss IsNot Nothing AndAlso _boss.CurrentSpell < 0 AndAlso _boss.SpellCards.Count > 0 Then")
+                    w.Line("    _boss.IsEnabled = True")
+                    w.Line("    _boss.NextSpell()")
+                    w.Line("End If")
                 End If
                 w.Close("End Sub")
                 w.Line()
             Next
         End Sub
+
+        Private Function DialogueImageExpression(resourceId As String) As String
+            If String.IsNullOrWhiteSpace(resourceId) OrElse _resourceUris Is Nothing Then
+                Return "New System.Windows.Media.ImageBrush()"
+            End If
+            Dim uri As String = Nothing
+            If Not _resourceUris.TryGetValue(resourceId, uri) OrElse String.IsNullOrWhiteSpace(uri) Then
+                Return "New System.Windows.Media.ImageBrush()"
+            End If
+            Return "New System.Windows.Media.ImageBrush(New System.Windows.Media.Imaging.BitmapImage(New System.Uri(" &
+                   VBCodeGenerator.Quote(uri) & ", System.UriKind.Absolute)))"
+        End Function
 
         Private Shared Function DialogueMethodName(id As String) As String
             Return "PlayDialogue_" & VBCodeGenerator.SanitizeIdentifier(id, "dialog")
@@ -715,12 +731,6 @@ Namespace Global.DanmakuDesigner.Core
             w.Open("Public Sub Tick()")
             w.Line("If Halted Then Return")
             If _needsTimer Then w.Line("RunTimers()")
-            If _info.BossTemplate IsNot Nothing Then
-                w.Open("If Host.Ticks >= 65 AndAlso Boss.CurrentSpell = -1 Then")
-                w.Line("Boss.IsEnabled = True")
-                w.Line("Boss.NextSpell()")
-                w.Close("End If")
-            End If
             For i = 0 To _info.Program.Scripts.Count - 1
                 Dim script = _info.Program.Scripts(i)
                 Dim def = script.Definition
@@ -758,6 +768,20 @@ Namespace Global.DanmakuDesigner.Core
                     If Not def.IsHat Then Continue For
                     Dim method = "SP" & spellIndex & "_" & j
                     Select Case def.HatKind
+                        Case HatKind.SpellUsualStart
+                            w.Open("If " & baseCondition & SpellPhaseCondition(spellIndex, "usual") & " AndAlso Not _spOnce" & spellIndex & "_" & j & " Then")
+                            w.Line("_spOnce" & spellIndex & "_" & j & " = True")
+                            w.Line(method & "()")
+                            w.Close("End If")
+                        Case HatKind.SpellFormalStart
+                            w.Open("If " & baseCondition & SpellPhaseCondition(spellIndex, "spell") & " AndAlso Not _spOnce" & spellIndex & "_" & j & " Then")
+                            w.Line("_spOnce" & spellIndex & "_" & j & " = True")
+                            w.Line(method & "()")
+                            w.Close("End If")
+                        Case HatKind.SpellUsualEveryFrame
+                            w.Line("If " & baseCondition & SpellPhaseCondition(spellIndex, "usual") & " Then " & method & "()")
+                        Case HatKind.SpellFormalEveryFrame
+                            w.Line("If " & baseCondition & SpellPhaseCondition(spellIndex, "spell") & " Then " & method & "()")
                         Case HatKind.Spawn, HatKind.SpellStart
                             w.Open("If " & baseCondition & " AndAlso Not _spOnce" & spellIndex & "_" & j & " Then")
                             w.Line("_spOnce" & spellIndex & "_" & j & " = True")
@@ -807,11 +831,21 @@ Namespace Global.DanmakuDesigner.Core
             Next
         End Sub
 
+        Private Function SpellPhaseCondition(spellIndex As Integer, phase As String) As String
+            Dim card = "Boss.SpellCards(" & spellIndex.ToString(CultureInfo.InvariantCulture) & ")"
+            Select Case If(phase, "").Trim().ToLowerInvariant()
+                Case "usual" : Return " AndAlso " & card & ".HaveUsual AndAlso Not " & card & ".AtSpell"
+                Case "spell" : Return " AndAlso " & card & ".AtSpell"
+                Case Else : Return ""
+            End Select
+        End Function
+
         Private Sub EmitBossSpellHat(w As CodeWriter, script As BlockNode, index As Integer, startOnly As Boolean)
             Dim spell = Math.Max(1, CInt(script.GetDouble("spell", 1))) - 1
             Dim method = "S" & index.ToString(CultureInfo.InvariantCulture)
             Dim condition = "Boss.CurrentSpell = " & spell & " AndAlso Boss.SpellCards.Count > " & spell &
-                            " AndAlso Boss.SpellCards(" & spell & ").IsEnabled"
+                            " AndAlso Boss.SpellCards(" & spell & ").IsEnabled" &
+                            SpellPhaseCondition(spell, script.GetField("phase"))
             If startOnly Then
                 w.Open("If " & condition & " AndAlso Not _spellStart" & index & " Then")
                 w.Line("_spellStart" & index & " = True")
@@ -1203,6 +1237,11 @@ Namespace Global.DanmakuDesigner.Core
 
         Private Function EmitCondition(block As BlockNode) As String
             Dim subj = block.GetField("subj")
+            If subj = "atspell" Then
+                If _info.BossTemplate Is Nothing Then Return "False"
+                Dim card = "Boss.SpellCards(Boss.CurrentSpell)"
+                Return "Boss.CurrentSpell >= 0 AndAlso Boss.CurrentSpell < Boss.SpellCards.Count AndAlso " & card & ".AtSpell"
+            End If
             Dim left As String
             Select Case subj
                 Case "ticks" : left = "Host.Ticks"

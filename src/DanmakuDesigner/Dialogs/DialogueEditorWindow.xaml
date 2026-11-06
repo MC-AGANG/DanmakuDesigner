@@ -58,6 +58,7 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
                     <Grid Grid.Row="0">
@@ -79,8 +80,9 @@
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="80" />
                         </Grid.ColumnDefinitions>
-                        <TextBlock Text="立绘索引" VerticalAlignment="Center" Foreground="#BDBDBD" />
-                        <TextBox x:Name="IllustrationBox" Grid.Column="1" Height="26" Text="0" TextChanged="Field_TextChanged" />
+                        <TextBlock Text="本句立绘" VerticalAlignment="Center" Foreground="#BDBDBD" />
+                        <ComboBox x:Name="IllustrationBox" Grid.Column="1" Height="26" DisplayMemberPath="Display"
+                                  SelectedValuePath="Id" />
                         <TextBlock Grid.Column="2" Text="等待 CD" VerticalAlignment="Center" Foreground="#BDBDBD" Margin="14,0,8,0" />
                         <TextBox x:Name="CdBox" Grid.Column="3" Height="26" Text="15" TextChanged="Field_TextChanged" />
                         <CheckBox x:Name="AutoBox" Grid.Column="4" Content="CD 后自动下一句" VerticalAlignment="Center" Margin="16,0,0,0" Click="Field_Changed" />
@@ -112,13 +114,30 @@
                             <ColumnDefinition Width="90" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
-                        <TextBlock Text="Boss 模板" VerticalAlignment="Center" Foreground="#BDBDBD" />
+                        <TextBlock Text="Boss 开打" VerticalAlignment="Center" Foreground="#BDBDBD" />
+                        <TextBlock Grid.Column="1" Text="让当前场上待命的 Boss 进入攻击状态"
+                                   VerticalAlignment="Center" Foreground="#8A8A8A" TextWrapping="Wrap" />
                         <ComboBox x:Name="BossBox" Grid.Column="1" Height="28" DisplayMemberPath="Display"
-                                  SelectedValuePath="Id" />
+                                  SelectedValuePath="Id" Visibility="Collapsed" />
                     </Grid>
 
-                    <TextBlock Grid.Row="5" Margin="0,10,0,0" FontSize="10.5" Foreground="#8A8A8A"
-                               Text="CSV 格式：player/enemy 元数据 → speaker,content,illustration,cd,auto。立绘索引目前对应空白占位图，可先只使用文本对话。" />
+                    <Grid Grid.Row="5" Margin="0,10,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="90" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="90" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="玩家立绘" VerticalAlignment="Center" Foreground="#BDBDBD" />
+                        <ComboBox x:Name="PlayerIllustrationBox" Grid.Column="1" Height="28"
+                                  DisplayMemberPath="Display" SelectedValuePath="Id" />
+                        <TextBlock Grid.Column="2" Text="敌方立绘" VerticalAlignment="Center" Foreground="#BDBDBD" Margin="14,0,8,0" />
+                        <ComboBox x:Name="EnemyIllustrationBox" Grid.Column="3" Height="28"
+                                  DisplayMemberPath="Display" SelectedValuePath="Id" />
+                    </Grid>
+
+                    <TextBlock Grid.Row="6" Margin="0,10,0,0" FontSize="10.5" Foreground="#8A8A8A"
+                               Text="CSV 格式：player/enemy 元数据 → 立绘索引 → speaker,content,illustration,cd,auto。播放时会跳过前两行元数据，不会当作对话内容。" />
                 </Grid>
             </Border>
         </Grid>

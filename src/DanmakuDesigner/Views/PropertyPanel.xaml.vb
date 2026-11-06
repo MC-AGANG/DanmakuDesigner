@@ -526,18 +526,27 @@ Public Class PropertyPanel
         }
         Host.Children.Add(ComboRow("类型", types, spell.Type.ToString(), Sub(value)
                                                                             Dim kind As BossSpellType
-                                                                            If [Enum].TryParse(value, kind) Then spell.Type = kind
+                                                                            If [Enum].TryParse(value, kind) Then
+                                                                                spell.Type = kind
+                                                                                If kind = BossSpellType.None Then spell.HaveUsual = True
+                                                                            End If
                                                                         End Sub))
+        Host.Children.Add(Ui.SectionTitle("非符阶段"))
         Host.Children.Add(CheckRow("拥有非符阶段", spell.HaveUsual, Sub(value) spell.HaveUsual = value))
         Host.Children.Add(NumberRow("非符 HP", spell.UsualHP, Sub(value) spell.UsualHP = Math.Max(1, value)))
         Host.Children.Add(NumberRow("非符时间", spell.UsualTime, Sub(value) spell.UsualTime = Math.Max(1, CInt(value))))
-        Host.Children.Add(NumberRow("符卡 HP", spell.SpellHP, Sub(value) spell.SpellHP = Math.Max(1, value)))
-        Host.Children.Add(NumberRow("符卡时间", spell.SpellTime, Sub(value) spell.SpellTime = Math.Max(1, CInt(value))))
-        Host.Children.Add(NumberRow("分数", spell.Score, Sub(value) spell.Score = Math.Max(0, CLng(value))))
-        Host.Children.Add(BuildDropItemsEditor(spell.Items, Sub(value) spell.Items = value))
-        Host.Children.Add(NumberRow("阶段数", spell.StageCount, Sub(value) spell.StageCount = Math.Max(1, Math.Min(8, CInt(value)))))
+        If spell.Type = BossSpellType.None Then
+            Host.Children.Add(Ui.Label("类型为「仅非符」：这张符卡不会进入正式符卡阶段。", 10.5, "#8A8A8A"))
+        Else
+            Host.Children.Add(Ui.SectionTitle("正式符卡阶段"))
+            Host.Children.Add(NumberRow("符卡 HP", spell.SpellHP, Sub(value) spell.SpellHP = Math.Max(1, value)))
+            Host.Children.Add(NumberRow("符卡时间", spell.SpellTime, Sub(value) spell.SpellTime = Math.Max(1, CInt(value))))
+            Host.Children.Add(NumberRow("分数", spell.Score, Sub(value) spell.Score = Math.Max(0, CLng(value))))
+            Host.Children.Add(BuildDropItemsEditor(spell.Items, Sub(value) spell.Items = value))
+            Host.Children.Add(NumberRow("阶段数", spell.StageCount, Sub(value) spell.StageCount = Math.Max(1, Math.Min(8, CInt(value)))))
+        End If
 
-        Host.Children.Add(BehaviorCard(spell.Behavior, "符卡行为", Sub() App.Session.EditSpellBehavior(spell)))
+        Host.Children.Add(BehaviorCard(spell.Behavior, "符卡行为（非符 / 正式符卡）", Sub() App.Session.EditSpellBehavior(spell)))
         Dim buttons As New WrapPanel With {.Margin = New Thickness(0, 6, 0, 0)}
         buttons.Children.Add(MakeButton("编辑符卡积木", "VS.AccentButton", Sub() App.Session.EditSpellBehavior(spell)))
         buttons.Children.Add(MakeButton("复制符卡", "VS.Button", Sub() DuplicateSpell(spell)))
@@ -556,14 +565,16 @@ Public Class PropertyPanel
         Host.Children.Add(TextRow("名称", dialogue.Name, Sub(value) dialogue.Name = value))
         Host.Children.Add(Ui.Label("共 " & dialogue.Lines.Count & " 句对话；句数和内容在对话编辑器中修改。", 10.5, "#8A8A8A"))
 
+        Host.Children.Add(Ui.SectionTitle("立绘"))
+        Dim illustrations = ResourceChoices.ImageResourceChoices()
+        illustrations.Insert(0, New ChoiceInfo("", "无立绘"))
+        Host.Children.Add(ComboRow("玩家立绘", illustrations, dialogue.PlayerIllustrationId,
+                                   Sub(value) dialogue.PlayerIllustrationId = value))
+        Host.Children.Add(ComboRow("敌方立绘", illustrations, dialogue.EnemyIllustrationId,
+                                   Sub(value) dialogue.EnemyIllustrationId = value))
+        Host.Children.Add(Ui.Label("选择游戏资源中的图片作为双方对话立绘。", 10.5, "#8A8A8A"))
+
         Host.Children.Add(Ui.SectionTitle("结束后"))
-        Dim bosses As New List(Of ChoiceInfo)
-        Dim stage = App.Session.Stage
-        If stage IsNot Nothing Then
-            For Each bossTemplate In stage.EnemyTemplates
-                If bossTemplate IsNot Nothing AndAlso bossTemplate.IsBoss Then bosses.Add(New ChoiceInfo(bossTemplate.Id, bossTemplate.Name))
-            Next
-        End If
         Dim afterOptions As New List(Of ChoiceInfo) From {
             New ChoiceInfo(DialogueAfterAction.None.ToString(), "不结束"),
             New ChoiceInfo(DialogueAfterAction.StartBoss.ToString(), "Boss 开打"),
@@ -571,18 +582,9 @@ Public Class PropertyPanel
         }
         Host.Children.Add(ComboRow("对话结束之后", afterOptions, dialogue.AfterAction.ToString(), Sub(value)
                                                                                                          Dim kind As DialogueAfterAction
-                                                                                                         If [Enum].TryParse(value, kind) Then
-                                                                                                             dialogue.AfterAction = kind
-                                                                                                             If kind = DialogueAfterAction.StartBoss AndAlso String.IsNullOrWhiteSpace(dialogue.BossTemplateId) AndAlso bosses.Count > 0 Then
-                                                                                                                 dialogue.BossTemplateId = bosses(0).Value
-                                                                                                             End If
-                                                                                                         End If
+                                                                                                         If [Enum].TryParse(value, kind) Then dialogue.AfterAction = kind
                                                                                                      End Sub))
-        If bosses.Count > 0 Then
-            Host.Children.Add(ComboRow("要开打的 Boss", bosses, dialogue.BossTemplateId, Sub(value) dialogue.BossTemplateId = value))
-        Else
-            Host.Children.Add(Ui.Label("还没有 Boss 模板；先在敌机模板中把某个模板设为 Boss。", 10.5, "#8A8A8A"))
-        End If
+        Host.Children.Add(Ui.Label("「Boss 开打」会让当前场上待命的 Boss 从待命状态进入攻击状态，不会创建新 Boss。", 10.5, "#8A8A8A"))
 
         Host.Children.Add(Ui.SectionTitle("内容"))
         If dialogue.Lines.Count = 0 Then

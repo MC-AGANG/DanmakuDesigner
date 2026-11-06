@@ -29,6 +29,7 @@ Public Class BlockVisual
     Private _baseBorderBrush As Brush
     Private _paletteDragged As Boolean
     Private _comboOpen As Boolean
+    Private _committingField As Boolean
 
     Public Sub New(node As BlockNode, def As BlockDefinition, owner As BlockEditorView, isPalette As Boolean, parentList As List(Of BlockNode), parentIndex As Integer)
         Me.Node = node
@@ -304,6 +305,9 @@ Public Class BlockVisual
         }
         Dim resources = If(App.Session.Project IsNot Nothing, App.Session.Project.Resources, Nothing)
         Dim options = field.Options(App.Session.Stage, resources)
+        If field.Key = "subj" AndAlso Owner IsNot Nothing AndAlso Owner.Scope = ProgramScope.Bullet Then
+            options = options.Where(Function(o) Not String.Equals(o.Value, "atspell", StringComparison.OrdinalIgnoreCase)).ToList()
+        End If
         For Each opt In options
             combo.Items.Add(opt)
         Next
@@ -347,7 +351,7 @@ Public Class BlockVisual
             .Width = Math.Max(30, field.Width),
             .Text = If(value, ""),
             .Tag = If(value, ""),
-            .ToolTip = If(String.IsNullOrWhiteSpace(field.Tooltip), "右键可插入取值器", field.Tooltip),
+            .ToolTip = If(String.IsNullOrWhiteSpace(field.Tooltip), "右键可插入取值器或自定义变量", field.Tooltip),
             .ContextMenu = BuildReporterMenu(field)
         }
         AddHandler box.LostKeyboardFocus, Sub() CommitBox(box, field, numeric)
@@ -368,6 +372,13 @@ Public Class BlockVisual
 
     Private Function BuildReporterMenu(field As FieldDef) As ContextMenu
         Dim menu As New ContextMenu()
+        ' 每次打开时重新收集变量，刚创建的变量不需要刷新积木即可出现。
+        AddHandler menu.Opened, Sub() PopulateReporterMenu(menu, field)
+        Return menu
+    End Function
+
+    Private Sub PopulateReporterMenu(menu As ContextMenu, field As FieldDef)
+        menu.Items.Clear()
         Dim header As New MenuItem With {.Header = "插入取值器", .IsEnabled = False}
         menu.Items.Add(header)
         AddReporterItem(menu, field, "存在时间（帧）", "$ticks")
@@ -379,6 +390,14 @@ Public Class BlockVisual
         AddReporterItem(menu, field, "自身 Y", "$y")
         AddReporterItem(menu, field, "场上子弹数", "$bullets")
         AddReporterItem(menu, field, "场上敌机数", "$enemies")
+        Dim variableNames = Owner.GetVariableNames()
+        If variableNames.Count > 0 Then
+            menu.Items.Add(New Separator())
+            menu.Items.Add(New MenuItem With {.Header = "自定义变量", .IsEnabled = False})
+            For Each varName In variableNames
+                AddReporterItem(menu, field, "变量 " & varName, "$var:" & varName)
+            Next
+        End If
         menu.Items.Add(New Separator())
         Dim randomItem As New MenuItem With {.Header = "随机范围…"}
         AddHandler randomItem.Click, Sub()
@@ -405,8 +424,7 @@ Public Class BlockVisual
                                         If value IsNot Nothing Then SetReporter(field, "$var:" & value.Trim())
                                     End Sub
         menu.Items.Add(varItem)
-        Return menu
-    End Function
+    End Sub
 
     Private Sub AddReporterItem(menu As ContextMenu, field As FieldDef, header As String, expression As String)
         Dim item As New MenuItem With {.Header = header}
@@ -415,7 +433,8 @@ Public Class BlockVisual
     End Sub
 
     Private Sub SetReporter(field As FieldDef, expression As String)
-        ApplyFieldValue(field.Key, expression, True)
+        ' 右键菜单关闭后再重建积木，避免在弹出菜单的消息循环里刷新父级视觉树。
+        Dispatcher.BeginInvoke(New Action(Sub() ApplyFieldValue(field.Key, expression, True)), DispatcherPriority.Input)
     End Sub
 
     Private Function MakeReporterPill(field As FieldDef, raw As String) As FrameworkElement
@@ -434,7 +453,7 @@ Public Class BlockVisual
         }
         Dim menu As New ContextMenu()
         Dim revert As New MenuItem With {.Header = "改回数字"}
-        AddHandler revert.Click, Sub() ApplyFieldValue(field.Key, "0", True)
+        AddHandler revert.Click, Sub() SetReporter(field, "0")
         menu.Items.Add(revert)
         border.ContextMenu = menu
         Return border
@@ -444,14 +463,21 @@ Public Class BlockVisual
         If Definition Is Nothing Then Return
         If Definition.TypeId <> "if" Then Return
         Dim isVar = Node.GetField("subj") = "var"
+        Dim isAtSpell = Node.GetField("subj") = "atspell"
         Dim control As FrameworkElement = Nothing
         If _fields.TryGetValue("varName", control) Then
             control.Visibility = If(isVar, Visibility.Visible, Visibility.Collapsed)
         End If
+        If _fields.TryGetValue("op", control) Then
+            control.Visibility = If(isAtSpell, Visibility.Collapsed, Visibility.Visible)
+        End If
+        If _fields.TryGetValue("value", control) Then
+            control.Visibility = If(isAtSpell, Visibility.Collapsed, Visibility.Visible)
+        End If
     End Sub
 
     Private Sub CommitBox(box As TextBox, field As FieldDef, numeric As Boolean)
-        If IsPalette Then Return
+        If IsPalette OrElse _committingField Then Return
         Dim value = box.Text
         If value = CStr(box.Tag) Then Return
         If numeric AndAlso Not ValueExpression.IsReporter(value) Then
@@ -462,8 +488,14 @@ Public Class BlockVisual
             End If
         End If
         box.BorderBrush = Brushes.Transparent
-        ApplyFieldValue(field.Key, value, False)
-        box.Tag = value
+        ' 先更新 Tag 再提交，避免 CommitEdit 触发界面刷新时 LostKeyboardFocus 再次进入提交。
+        _committingField = True
+        Try
+            box.Tag = value
+            ApplyFieldValue(field.Key, value, False)
+        Finally
+            _committingField = False
+        End Try
     End Sub
 
     Private Sub ApplyFieldValue(key As String, value As String, rebuild As Boolean)

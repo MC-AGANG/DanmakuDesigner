@@ -207,12 +207,15 @@ Namespace Global.DanmakuDesigner.Core
     Public Class DialogueLine
         Public Property Speaker As DialogueSpeaker = DialogueSpeaker.Player
         Public Property Content As String = ""
+        ''' <summary>本句使用的立绘图片资源；留空时沿用对话默认立绘/旧索引。</summary>
+        Public Property IllustrationId As String = ""
         Public Property Illustration As Integer = 0
         Public Property CD As Integer = 15
         Public Property Auto As Boolean = False
 
         Public Sub Normalize()
             If Content Is Nothing Then Content = ""
+            If IllustrationId Is Nothing Then IllustrationId = ""
             If Illustration < 0 Then Illustration = 0
             If CD < 0 Then CD = 0
         End Sub
@@ -224,8 +227,12 @@ Namespace Global.DanmakuDesigner.Core
         Public Property Name As String = "新对话"
         Public Property Lines As New List(Of DialogueLine)
         Public Property AfterAction As DialogueAfterAction = DialogueAfterAction.None
-        ''' <summary>AfterAction 为 StartBoss 时要生成的 Boss 模板 Id。</summary>
+        ''' <summary>旧字段；Boss 开打现在作用于当前场上 Boss，不再创建模板。</summary>
         Public Property BossTemplateId As String = ""
+        ''' <summary>对话中玩家一侧的立绘图片资源 Id。</summary>
+        Public Property PlayerIllustrationId As String = ""
+        ''' <summary>对话中敌方一侧的立绘图片资源 Id。</summary>
+        Public Property EnemyIllustrationId As String = ""
 
         Public Sub Normalize()
             If String.IsNullOrWhiteSpace(Id) Then Id = Ids.NewId("dialog")
@@ -237,6 +244,8 @@ Namespace Global.DanmakuDesigner.Core
             Next
             Lines.RemoveAll(Function(l) l Is Nothing)
             If BossTemplateId Is Nothing Then BossTemplateId = ""
+            If PlayerIllustrationId Is Nothing Then PlayerIllustrationId = ""
+            If EnemyIllustrationId Is Nothing Then EnemyIllustrationId = ""
         End Sub
     End Class
 

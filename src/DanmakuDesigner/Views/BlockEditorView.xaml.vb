@@ -18,6 +18,7 @@ Public Class BlockEditorView
     Private ReadOnly _parentLists As New Dictionary(Of BlockNode, List(Of BlockNode))
     Private _insertLine As Border
     Private _loaded As Boolean
+    Private _editingField As Boolean
 
     Public Sub New()
         InitializeComponent()
@@ -235,17 +236,58 @@ Public Class BlockEditorView
         Next
     End Sub
 
+    Public Function GetVariableNames() As List(Of String)
+        Dim names As New HashSet(Of String)(StringComparer.OrdinalIgnoreCase)
+        Dim visited As New HashSet(Of BlockNode)()
+        If _context IsNot Nothing AndAlso _context.Program IsNot Nothing Then
+            For Each script In _context.Program.Scripts
+                CollectVariableNames(script, names, visited)
+            Next
+        End If
+        Return names.OrderBy(Function(n) n, StringComparer.OrdinalIgnoreCase).ToList()
+    End Function
+
+    Private Sub CollectVariableNames(block As BlockNode, names As HashSet(Of String), visited As HashSet(Of BlockNode))
+        If block Is Nothing OrElse Not visited.Add(block) Then Return
+        If block.TypeId = "set_var" OrElse block.TypeId = "add_var" Then
+            Dim name = block.GetField("name").Trim()
+            If name.Length > 0 Then names.Add(name)
+        End If
+        If block.TypeId = "if" AndAlso block.GetField("subj") = "var" Then
+            Dim name = block.GetField("varName").Trim()
+            If name.Length > 0 Then names.Add(name)
+        End If
+        For Each field In block.Fields
+            If ValueExpression.IsReporter(field.Value) AndAlso ValueExpression.ReporterKind(field.Value) = "var" Then
+                Dim name = ValueExpression.ReporterArg(field.Value).Trim()
+                If name.Length > 0 Then names.Add(name)
+            End If
+        Next
+        For Each child In block.Children
+            CollectVariableNames(child, names, visited)
+        Next
+        For Each child In block.ElseChildren
+            CollectVariableNames(child, names, visited)
+        Next
+    End Sub
+
     Public Sub FieldEdited(visual As BlockVisual, key As String, value As String, rebuild As Boolean)
         If visual Is Nothing OrElse visual.Node Is Nothing Then Return
         If visual.Node.GetField(key) = value Then Return
-        App.Session.BeginEdit()
-        visual.Node.SetField(key, value)
-        App.Session.CommitEdit()
-        If rebuild Then
-            Refresh()
-        Else
+        If _editingField Then Return
+        _editingField = True
+        Try
+            App.Session.BeginEdit()
             visual.Node.SetField(key, value)
-        End If
+            App.Session.CommitEdit()
+            If rebuild Then
+                Refresh()
+            Else
+                visual.Node.SetField(key, value)
+            End If
+        Finally
+            _editingField = False
+        End Try
     End Sub
 
     Public Sub ShowBodyHint(visual As BlockVisual, active As Boolean)
@@ -431,7 +473,7 @@ Public Class BlockEditorView
         Dim menu As New ContextMenu()
         Dim header As New MenuItem With {.Header = "选择事件积木", .IsEnabled = False}
         menu.Items.Add(header)
-        For Each def In BlockRegistry.ForScope(Scope, _context.IsBoss, _context.ParticleIs3D).Where(Function(d) d.IsHat)
+        For Each def In BlockRegistry.ForScope(Scope, _context.IsBoss, _context.ParticleIs3D, _context.IsSpell).Where(Function(d) d.IsHat)
             Dim captured = def
             Dim item As New MenuItem With {.Header = def.Title}
             AddHandler item.Click, Sub() AddScript(captured.TypeId)

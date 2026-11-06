@@ -29,6 +29,10 @@ Namespace Global.DanmakuDesigner.Core
         ParticleSpawn = 12
         ParticleEveryFrame = 13
         ParticleWhenPosition = 14
+        SpellUsualStart = 15
+        SpellUsualEveryFrame = 16
+        SpellFormalStart = 17
+        SpellFormalEveryFrame = 18
     End Enum
 
     Public NotInheritable Class FieldOption
@@ -91,6 +95,10 @@ Namespace Global.DanmakuDesigner.Core
         Public Property Requires2DParticle As Boolean = False
         ''' <summary>只在 3D 粒子行为中显示。</summary>
         Public Property Requires3DParticle As Boolean = False
+        ''' <summary>只在符卡自身的积木行为中显示。</summary>
+        Public Property SpellBehaviorOnly As Boolean = False
+        ''' <summary>只在 Boss 模板行为中显示（按符卡序号控制）。</summary>
+        Public Property BossBehaviorOnly As Boolean = False
         Public Property Tooltip As String = ""
         Public Property HatKind As HatKind = HatKind.None
         Public Property Fields As New List(Of FieldDef)
@@ -125,9 +133,11 @@ Namespace Global.DanmakuDesigner.Core
             Return Fields.FirstOrDefault(Function(f) String.Equals(f.Key, key, StringComparison.OrdinalIgnoreCase))
         End Function
 
-        Public Function Allows(programScope As ProgramScope, Optional particle3D As Boolean = False) As Boolean
+        Public Function Allows(programScope As ProgramScope, Optional particle3D As Boolean = False, Optional isSpellBehavior As Boolean = False) As Boolean
             If Requires2DParticle AndAlso particle3D Then Return False
             If Requires3DParticle AndAlso Not particle3D Then Return False
+            If SpellBehaviorOnly AndAlso Not isSpellBehavior Then Return False
+            If BossBehaviorOnly AndAlso isSpellBehavior Then Return False
             If programScope = ProgramScope.Particle Then Return Me.Scope = BlockScope.ParticleOnly
             If Me.Scope = BlockScope.ParticleOnly Then Return False
             If Me.Scope = BlockScope.Both Then Return True
@@ -184,7 +194,8 @@ Namespace Global.DanmakuDesigner.Core
             New FieldOption("x", "自身 X"),
             New FieldOption("y", "自身 Y"),
             New FieldOption("var", "变量"),
-            New FieldOption("random", "随机数")
+            New FieldOption("random", "随机数"),
+            New FieldOption("atspell", "处于符卡阶段")
         }
 
         Public ReadOnly Comparisons As IReadOnlyList(Of FieldOption) = New List(Of FieldOption) From {
@@ -213,6 +224,12 @@ Namespace Global.DanmakuDesigner.Core
             New FieldOption("<", "<")
         }
 
+        Public ReadOnly SpellPhases As IReadOnlyList(Of FieldOption) = New List(Of FieldOption) From {
+            New FieldOption("all", "全部阶段"),
+            New FieldOption("usual", "非符阶段"),
+            New FieldOption("spell", "正式符卡阶段")
+        }
+
         Public Sub Register(def As BlockDefinition)
             _all.Add(def)
             _byId(def.TypeId) = def
@@ -231,14 +248,14 @@ Namespace Global.DanmakuDesigner.Core
             Return _all
         End Function
 
-        Public Function ForScope(scope As ProgramScope, Optional isBoss As Boolean = False, Optional particle3D As Boolean = False) As IEnumerable(Of BlockDefinition)
+        Public Function ForScope(scope As ProgramScope, Optional isBoss As Boolean = False, Optional particle3D As Boolean = False, Optional isSpellBehavior As Boolean = False) As IEnumerable(Of BlockDefinition)
             EnsureBuilt()
-            Return _all.Where(Function(d) d.Allows(scope, particle3D) AndAlso (Not d.RequiresBoss OrElse isBoss))
+            Return _all.Where(Function(d) d.Allows(scope, particle3D, isSpellBehavior) AndAlso (Not d.RequiresBoss OrElse isBoss))
         End Function
 
-        Public Function Palette(category As BlockCategory, scope As ProgramScope, includeHats As Boolean, Optional isBoss As Boolean = False, Optional particle3D As Boolean = False) As IEnumerable(Of BlockDefinition)
+        Public Function Palette(category As BlockCategory, scope As ProgramScope, includeHats As Boolean, Optional isBoss As Boolean = False, Optional particle3D As Boolean = False, Optional isSpellBehavior As Boolean = False) As IEnumerable(Of BlockDefinition)
             EnsureBuilt()
-            Return _all.Where(Function(d) d.Category = category AndAlso d.Allows(scope, particle3D) AndAlso (d.IsHat = includeHats) AndAlso (Not d.RequiresBoss OrElse isBoss))
+            Return _all.Where(Function(d) d.Category = category AndAlso d.Allows(scope, particle3D, isSpellBehavior) AndAlso (d.IsHat = includeHats) AndAlso (Not d.RequiresBoss OrElse isBoss))
         End Function
 
         Public Function ResolveOptions(source As String, stage As StageDocument, Optional resources As IEnumerable(Of GameResource) = Nothing) As List(Of FieldOption)
@@ -282,6 +299,8 @@ Namespace Global.DanmakuDesigner.Core
                     result.AddRange(ParticleAxes2D)
                 Case "particleAxes3D"
                     result.AddRange(ParticleAxes3D)
+                Case "spellPhases"
+                    result.AddRange(SpellPhases)
             End Select
             Return result
         End Function
@@ -404,20 +423,52 @@ Namespace Global.DanmakuDesigner.Core
             d.RequiresBoss = True
 
             d = Def("spell_start", "当第 N 张符卡开始", BlockCategory.Trigger, BlockKind.Hat, BlockScope.EnemyOnly, HatKind.SpellStart,
-                    "指定符卡阶段开始时执行一次；只在 Boss 模板中有效。")
+                    "指定符卡开始或进入指定阶段时执行一次；只在 Boss 模板行为中有效。")
             AddLabel(d, "当第 ")
             AddFieldPart(d, "spell")
-            AddLabel(d, " 张符卡开始")
+            AddLabel(d, " 张符卡 ")
+            AddFieldPart(d, "phase")
+            AddLabel(d, " 开始")
             AddField(d, "spell", FieldKind.Number, "1", 34, "", "符卡序号（从 1 开始）", 1, 64)
+            AddField(d, "phase", FieldKind.Choice, "all", 76, "spellPhases", "全部阶段 / 非符阶段 / 正式符卡阶段")
             d.RequiresBoss = True
+            d.BossBehaviorOnly = True
 
             d = Def("spell_every_frame", "第 N 张符卡每帧", BlockCategory.Trigger, BlockKind.Hat, BlockScope.EnemyOnly, HatKind.SpellEveryFrame,
-                    "指定符卡阶段内每帧执行；只在 Boss 模板中有效。")
+                    "指定符卡的指定阶段内每帧执行；只在 Boss 模板行为中有效。")
             AddLabel(d, "第 ")
             AddFieldPart(d, "spell")
-            AddLabel(d, " 张符卡每帧")
+            AddLabel(d, " 张符卡 ")
+            AddFieldPart(d, "phase")
+            AddLabel(d, " 每帧")
             AddField(d, "spell", FieldKind.Number, "1", 34, "", "符卡序号（从 1 开始）", 1, 64)
+            AddField(d, "phase", FieldKind.Choice, "all", 76, "spellPhases", "全部阶段 / 非符阶段 / 正式符卡阶段")
             d.RequiresBoss = True
+            d.BossBehaviorOnly = True
+
+            d = Def("spell_usual_start", "非符阶段开始", BlockCategory.Trigger, BlockKind.Hat, BlockScope.EnemyOnly, HatKind.SpellUsualStart,
+                    "这张符卡的非符阶段开始时执行一次；只在符卡自身的积木行为中有效。")
+            AddLabel(d, "非符阶段开始时")
+            d.RequiresBoss = True
+            d.SpellBehaviorOnly = True
+
+            d = Def("spell_usual_every_frame", "非符阶段每帧", BlockCategory.Trigger, BlockKind.Hat, BlockScope.EnemyOnly, HatKind.SpellUsualEveryFrame,
+                    "这张符卡的非符阶段内每帧执行；只在符卡自身的积木行为中有效。")
+            AddLabel(d, "非符阶段每帧")
+            d.RequiresBoss = True
+            d.SpellBehaviorOnly = True
+
+            d = Def("spell_formal_start", "正式符卡阶段开始", BlockCategory.Trigger, BlockKind.Hat, BlockScope.EnemyOnly, HatKind.SpellFormalStart,
+                    "这张符卡进入正式符卡阶段时执行一次；只在符卡自身的积木行为中有效。")
+            AddLabel(d, "正式符卡阶段开始时")
+            d.RequiresBoss = True
+            d.SpellBehaviorOnly = True
+
+            d = Def("spell_formal_every_frame", "正式符卡阶段每帧", BlockCategory.Trigger, BlockKind.Hat, BlockScope.EnemyOnly, HatKind.SpellFormalEveryFrame,
+                    "这张符卡的正式符卡阶段内每帧执行；只在符卡自身的积木行为中有效。")
+            AddLabel(d, "正式符卡阶段每帧")
+            d.RequiresBoss = True
+            d.SpellBehaviorOnly = True
         End Sub
 
         Private Sub BuildMotion()

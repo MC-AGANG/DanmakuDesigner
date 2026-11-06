@@ -8,6 +8,7 @@ Imports DanmakuDesigner.Core
 Public Class DialogueEditorWindow
 
     Private ReadOnly _lineItems As New List(Of LineItem)()
+    Private ReadOnly _illustrationChoices As New List(Of ChoiceItem)()
     Private _dialogue As DialogueDefinition
     Private _current As DialogueLine
     Private _loading As Boolean
@@ -49,6 +50,16 @@ Public Class DialogueEditorWindow
             BossBox.SelectedValue = If(String.IsNullOrWhiteSpace(_dialogue.BossTemplateId), bosses(0).Id, _dialogue.BossTemplateId)
         End If
 
+        _illustrationChoices.Add(New ChoiceItem("", "无立绘"))
+        For Each image In ResourceChoices.ImageResourceChoices()
+            _illustrationChoices.Add(New ChoiceItem(image.Value, image.Display))
+        Next
+        PlayerIllustrationBox.ItemsSource = _illustrationChoices
+        EnemyIllustrationBox.ItemsSource = _illustrationChoices
+        IllustrationBox.ItemsSource = _illustrationChoices
+        PlayerIllustrationBox.SelectedValue = If(String.IsNullOrWhiteSpace(_dialogue.PlayerIllustrationId), "", _dialogue.PlayerIllustrationId)
+        EnemyIllustrationBox.SelectedValue = If(String.IsNullOrWhiteSpace(_dialogue.EnemyIllustrationId), "", _dialogue.EnemyIllustrationId)
+
         For Each line In _dialogue.Lines
             _lineItems.Add(New LineItem(line, _lineItems.Count))
         Next
@@ -75,13 +86,13 @@ Public Class DialogueEditorWindow
         _current = line
         If line Is Nothing Then
             ContentBox.Text = ""
-            IllustrationBox.Text = "0"
+            IllustrationBox.SelectedValue = ""
             CdBox.Text = "15"
             AutoBox.IsChecked = False
         Else
             SpeakerBox.SelectedValue = If(line.Speaker = DialogueSpeaker.Enemy, "1", "0")
             ContentBox.Text = line.Content.Replace("<br/>", vbCrLf).Replace("<br>", vbCrLf)
-            IllustrationBox.Text = Math.Max(0, line.Illustration).ToString()
+            IllustrationBox.SelectedValue = If(line.IllustrationId, "")
             CdBox.Text = Math.Max(0, line.CD).ToString()
             AutoBox.IsChecked = line.Auto
         End If
@@ -93,7 +104,9 @@ Public Class DialogueEditorWindow
         _current.Speaker = If(String.Equals(SpeakerBox.SelectedValue?.ToString(), "1"), DialogueSpeaker.Enemy, DialogueSpeaker.Player)
         _current.Content = ContentBox.Text
         Dim value As Integer
-        _current.Illustration = If(Integer.TryParse(IllustrationBox.Text, value), Math.Max(0, value), 0)
+        Dim illustration = TryCast(IllustrationBox.SelectedItem, ChoiceItem)
+        _current.IllustrationId = If(illustration Is Nothing, "", illustration.Id)
+        If Not String.IsNullOrWhiteSpace(_current.IllustrationId) Then _current.Illustration = 0
         _current.CD = If(Integer.TryParse(CdBox.Text, value), Math.Max(0, value), 15)
         _current.Auto = AutoBox.IsChecked = True
     End Sub
@@ -235,6 +248,10 @@ Public Class DialogueEditorWindow
         _dialogue.Name = If(String.IsNullOrWhiteSpace(NameBox.Text), "对话", NameBox.Text.Trim())
         Dim selectedBoss = TryCast(BossBox.SelectedItem, ChoiceItem)
         _dialogue.BossTemplateId = If(selectedBoss Is Nothing, "", selectedBoss.Id)
+        Dim playerIllustration = TryCast(PlayerIllustrationBox.SelectedItem, ChoiceItem)
+        Dim enemyIllustration = TryCast(EnemyIllustrationBox.SelectedItem, ChoiceItem)
+        _dialogue.PlayerIllustrationId = If(playerIllustration Is Nothing, "", playerIllustration.Id)
+        _dialogue.EnemyIllustrationId = If(enemyIllustration Is Nothing, "", enemyIllustration.Id)
         _dialogue.Lines.Clear()
         For Each item In _lineItems
             _dialogue.Lines.Add(item.Line)

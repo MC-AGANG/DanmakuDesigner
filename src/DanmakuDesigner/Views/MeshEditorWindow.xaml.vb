@@ -62,7 +62,7 @@ Public Class MeshEditorWindow
 
     Private Sub BuildMeshList()
         MeshHost.Children.Clear()
-        For Each mesh In _layer.Meshes
+        For Each mesh In _layer.Meshes.AsEnumerable().Reverse()
             If mesh Is Nothing Then Continue For
             Dim selected = String.Equals(mesh.Id, _selectedId, StringComparison.Ordinal)
             Dim border As New Border With {
@@ -92,6 +92,29 @@ Public Class MeshEditorWindow
                                                        _selectedId = captured.Id
                                                        Refresh()
                                                    End Sub
+            Dim menu As New ContextMenu()
+            Dim duplicate As New MenuItem With {.Header = "复制几何体"}
+            AddHandler duplicate.Click, Sub() DuplicateMesh(captured)
+            menu.Items.Add(duplicate)
+            menu.Items.Add(New Separator())
+            Dim meshIndex = _layer.Meshes.IndexOf(captured)
+            Dim moveUp As New MenuItem With {.Header = "上移一层（更靠前）", .IsEnabled = meshIndex < _layer.Meshes.Count - 1}
+            AddHandler moveUp.Click, Sub() MoveMesh(captured, 1)
+            menu.Items.Add(moveUp)
+            Dim moveDown As New MenuItem With {.Header = "下移一层（更靠后）", .IsEnabled = meshIndex > 0}
+            AddHandler moveDown.Click, Sub() MoveMesh(captured, -1)
+            menu.Items.Add(moveDown)
+            menu.Items.Add(New Separator())
+            Dim deleteItem As New MenuItem With {.Header = "删除几何体"}
+            AddHandler deleteItem.Click, Sub()
+                                             _selectedId = captured.Id
+                                             DeleteSelectedMesh()
+                                         End Sub
+            menu.Items.Add(deleteItem)
+            AddHandler border.MouseRightButtonDown, Sub(sender As Object, e As MouseButtonEventArgs)
+                                                        _selectedId = captured.Id
+                                                    End Sub
+            border.ContextMenu = menu
             MeshHost.Children.Add(border)
         Next
         If _layer.Meshes.Count = 0 Then
@@ -137,6 +160,29 @@ Public Class MeshEditorWindow
                                                                       Apply(Sub() mesh.Name = value.Trim())
                                                                   End Sub))
             InspectorHost.Children.Add(ReadOnlyRow("类型", MeshName(mesh.Kind)))
+            Dim meshOrder = _layer.Meshes.IndexOf(mesh)
+            Dim orderPanel As New WrapPanel With {.Margin = New Thickness(0, 2, 0, 8)}
+            Dim upButton As New Button With {
+                .Content = "▲ 上移一层",
+                .Style = TryCast(Application.Current.FindResource("VS.Button"), Style),
+                .Padding = New Thickness(8, 3, 8, 3),
+                .Margin = New Thickness(0, 0, 6, 0),
+                .ToolTip = "在几何体列表中向前移动，用于调整透明遮挡顺序",
+                .IsEnabled = meshOrder < _layer.Meshes.Count - 1
+            }
+            AddHandler upButton.Click, Sub() MoveMesh(mesh, 1)
+            Dim downButton As New Button With {
+                .Content = "▼ 下移一层",
+                .Style = TryCast(Application.Current.FindResource("VS.Button"), Style),
+                .Padding = New Thickness(8, 3, 8, 3),
+                .ToolTip = "在几何体列表中向后移动，用于调整透明遮挡顺序",
+                .IsEnabled = meshOrder > 0
+            }
+            AddHandler downButton.Click, Sub() MoveMesh(mesh, -1)
+            orderPanel.Children.Add(upButton)
+            orderPanel.Children.Add(downButton)
+            InspectorHost.Children.Add(orderPanel)
+            InspectorHost.Children.Add(Ui.Label("列表越靠上，几何体越靠前；透明贴图按这个顺序参与绘制。", 10, "#8A8A8A"))
             InspectorHost.Children.Add(ColorRow("颜色", mesh.Color, Sub(value) Apply(Sub() mesh.Color = value)))
             InspectorHost.Children.Add(NumberRow("不透明度", mesh.Opacity, Sub(value) Apply(Sub() mesh.Opacity = Math.Max(0, Math.Min(1, value)))))
 
@@ -228,12 +274,46 @@ Public Class MeshEditorWindow
     End Sub
 
     Private Sub DeleteMesh_Click(sender As Object, e As RoutedEventArgs)
+        DeleteSelectedMesh()
+    End Sub
+
+    Private Sub DeleteSelectedMesh()
         Dim mesh = SelectedMesh
         If mesh Is Nothing Then Return
         App.Session.BeginEdit()
         _layer.Meshes.Remove(mesh)
         App.Session.CommitEdit()
         _selectedId = ""
+        Refresh()
+    End Sub
+
+    Private Sub DuplicateMesh(mesh As BackgroundMesh)
+        If mesh Is Nothing Then Return
+        Dim copy = ProjectJson.Clone(mesh)
+        copy.Id = Ids.NewId("mesh")
+        copy.Name = mesh.Name & " 副本"
+        App.Session.BeginEdit()
+        Dim index = _layer.Meshes.IndexOf(mesh)
+        If index >= 0 Then
+            _layer.Meshes.Insert(index + 1, copy)
+        Else
+            _layer.Meshes.Add(copy)
+        End If
+        App.Session.CommitEdit()
+        _selectedId = copy.Id
+        Refresh()
+    End Sub
+
+    Private Sub MoveMesh(mesh As BackgroundMesh, delta As Integer)
+        If mesh Is Nothing Then Return
+        Dim index = _layer.Meshes.IndexOf(mesh)
+        Dim target = index + delta
+        If index < 0 OrElse target < 0 OrElse target >= _layer.Meshes.Count Then Return
+        App.Session.BeginEdit()
+        _layer.Meshes.RemoveAt(index)
+        _layer.Meshes.Insert(target, mesh)
+        App.Session.CommitEdit()
+        _selectedId = mesh.Id
         Refresh()
     End Sub
 

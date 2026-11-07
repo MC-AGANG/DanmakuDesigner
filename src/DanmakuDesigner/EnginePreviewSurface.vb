@@ -128,6 +128,20 @@ Public Class EnginePreviewSurface
             Me.Content = _engine
         End If
         Me.UpdateLayout()
+        If AgSTG.STG.NameArea IsNot Nothing Then
+            ' BossName 的 Stars 数组在 Loaded 中创建；拖动播放头直接跳到 Boss 之后时，
+            ' 必须先确保该控件已经完成加载，避免 Initialize 访问 Nothing。
+            Dim nameVisibility = AgSTG.STG.NameArea.Visibility
+            AgSTG.STG.NameArea.Visibility = Visibility.Visible
+            AgSTG.STG.NameArea.UpdateLayout()
+            AgSTG.STG.NameArea.Visibility = nameVisibility
+            Me.Dispatcher.BeginInvoke(New Action(Sub()
+                                                     Dim deferredVisibility = AgSTG.STG.NameArea.Visibility
+                                                     AgSTG.STG.NameArea.Visibility = Visibility.Visible
+                                                     AgSTG.STG.NameArea.UpdateLayout()
+                                                     AgSTG.STG.NameArea.Visibility = deferredVisibility
+                                                 End Sub), System.Windows.Threading.DispatcherPriority.Loaded)
+        End If
         If Not _handlersHooked Then
             AddHandler AgSTG.STG.GameClear, AddressOf OnGameClear
             AddHandler AgSTG.STG.GameOver, AddressOf OnGameOver

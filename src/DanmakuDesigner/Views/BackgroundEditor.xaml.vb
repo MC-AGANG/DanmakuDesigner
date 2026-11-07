@@ -87,7 +87,7 @@ Public Class BackgroundEditor
             Dim count3d = Stage.BackgroundLayers.Where(Function(l) l.Kind = BackgroundLayerKind.Layer3D).Count()
             SummaryText.Text = "2D " & count2d & " · 3D " & count3d & " · 导出为 XAML"
         End If
-        For Each layer In Stage.BackgroundLayers
+        For Each layer In Stage.BackgroundLayers.AsEnumerable().Reverse()
             If layer Is Nothing Then Continue For
             LayerHost.Children.Add(MakeLayerRow(layer))
         Next
@@ -168,8 +168,16 @@ Public Class BackgroundEditor
                                                  e.Handled = True
                                                  ToggleVisible(layer)
                                              End Sub
-        Grid.SetColumn(eye, 3)
-        grid.Children.Add(eye)
+
+        Dim orderPanel As New StackPanel With {.Orientation = Orientation.Horizontal, .VerticalAlignment = VerticalAlignment.Center}
+        Dim layerIndex = Stage.BackgroundLayers.IndexOf(layer)
+        orderPanel.Children.Add(MakeOrderButton("▲", "上移一层（更靠前）", layerIndex < Stage.BackgroundLayers.Count - 1,
+                                                Sub() MoveLayer(layer, 1)))
+        orderPanel.Children.Add(MakeOrderButton("▼", "下移一层（更靠后）", layerIndex > 0,
+                                                Sub() MoveLayer(layer, -1)))
+        orderPanel.Children.Add(eye)
+        Grid.SetColumn(orderPanel, 3)
+        grid.Children.Add(orderPanel)
 
         border.Child = grid
         AddHandler border.MouseLeftButtonDown, Sub(sender As Object, e As MouseButtonEventArgs)
@@ -182,6 +190,39 @@ Public Class BackgroundEditor
                                               End Sub
         Return border
     End Function
+
+    Private Function MakeOrderButton(text As String, tip As String, enabled As Boolean, action As Action) As TextBlock
+        Dim button As New TextBlock With {
+            .Text = text,
+            .FontSize = 9,
+            .Foreground = Ui.Brush(If(enabled, "#C8C8C8", "#555555")),
+            .VerticalAlignment = VerticalAlignment.Center,
+            .Margin = New Thickness(1, 0, 1, 0),
+            .Padding = New Thickness(2, 1, 2, 1),
+            .ToolTip = tip,
+            .Cursor = If(enabled, Cursors.Hand, Cursors.Arrow)
+        }
+        If enabled Then
+            AddHandler button.MouseLeftButtonDown, Sub(sender As Object, e As MouseButtonEventArgs)
+                                                       e.Handled = True
+                                                       action.Invoke()
+                                                   End Sub
+        End If
+        Return button
+    End Function
+
+    Private Sub MoveLayer(layer As BackgroundLayer, delta As Integer)
+        If Stage Is Nothing OrElse layer Is Nothing Then Return
+        Dim index = Stage.BackgroundLayers.IndexOf(layer)
+        Dim target = index + delta
+        If index < 0 OrElse target < 0 OrElse target >= Stage.BackgroundLayers.Count Then Return
+        App.Session.BeginEdit()
+        Stage.BackgroundLayers.RemoveAt(index)
+        Stage.BackgroundLayers.Insert(target, layer)
+        App.Session.CommitEdit()
+        _selectedId = layer.Id
+        Refresh()
+    End Sub
 
     Private Sub BuildPreview()
         PreviewHost.Children.Clear()
@@ -230,6 +271,29 @@ Public Class BackgroundEditor
             .TextTrimming = TextTrimming.CharacterEllipsis
         }
         InspectorHost.Children.Add(header)
+        Dim layerOrder = Stage.BackgroundLayers.IndexOf(layer)
+        Dim orderPanel As New WrapPanel With {.Margin = New Thickness(0, 0, 0, 8)}
+        Dim upButton As New Button With {
+            .Content = "▲ 上移一层",
+            .Style = TryCast(Application.Current.FindResource("VS.Button"), Style),
+            .Padding = New Thickness(8, 3, 8, 3),
+            .Margin = New Thickness(0, 0, 6, 0),
+            .ToolTip = "向画面前方移动一层",
+            .IsEnabled = layerOrder < Stage.BackgroundLayers.Count - 1
+        }
+        AddHandler upButton.Click, Sub() MoveLayer(layer, 1)
+        Dim downButton As New Button With {
+            .Content = "▼ 下移一层",
+            .Style = TryCast(Application.Current.FindResource("VS.Button"), Style),
+            .Padding = New Thickness(8, 3, 8, 3),
+            .ToolTip = "向画面后方移动一层",
+            .IsEnabled = layerOrder > 0
+        }
+        AddHandler downButton.Click, Sub() MoveLayer(layer, -1)
+        orderPanel.Children.Add(upButton)
+        orderPanel.Children.Add(downButton)
+        InspectorHost.Children.Add(orderPanel)
+        InspectorHost.Children.Add(Ui.Label("列表上方为画面前方；用 ▲ 上移、▼ 下移调整绘制顺序。", 10, "#8A8A8A"))
         InspectorHost.Children.Add(TextRow("图层名称", layer.Name, Sub(value)
                                                                          If String.IsNullOrWhiteSpace(value) Then Return
                                                                          Apply(Sub() layer.Name = value.Trim())

@@ -208,7 +208,7 @@
 
 ![调色盘](docs/screenshots/color-palette.png)
 - 3D 图层包含摄像机、环境光和方向光；点击「打开 3D 建模工具…」打开独立建模窗口。
-- 图层顺序就是绘制顺序；导出时 2D 图层会变成 `Rectangle` / `Ellipse` / 粒子 `Canvas`，3D 图层会变成带 `Viewport3D`、`PerspectiveCamera` 和 `GeometryModel3D` 的背景 XAML。
+- 图层顺序就是绘制顺序：列表上方为画面前方。每行右侧的 ▲ / ▼，或属性面板的「上移一层 / 下移一层」，都可以调整顺序；导出时 2D 图层会变成 `Rectangle` / `Ellipse` / 粒子 `Canvas`，3D 图层会变成带 `Viewport3D`、`PerspectiveCamera` 和 `GeometryModel3D` 的背景 XAML。
 
 ![3D 建模工具](docs/screenshots/mesh-editor.png)
 
@@ -216,6 +216,8 @@
 
 - 长方体、圆柱体、球体、矩形面、三角形面。
 - 编辑几何体的位置、旋转、缩放、尺寸/半径、分段、颜色和透明度。
+- 几何体列表右键可以复制或删除几何体；复制品会插入原几何体后面，并保持完全相同的坐标和属性。
+- 几何体列表上方为画面前方；每行右键的「上移一层 / 下移一层」或属性面板按钮可调整透明贴图的遮挡顺序。
 - 预览视角：**左键拖动围绕中心旋转，右键拖动平移，滚轮缩放**。
 - 选中的几何体在预览中高亮；修改立即写回当前 3D 图层。
 

@@ -713,6 +713,11 @@ Namespace Global.DanmakuDesigner.Core
             w.Line("Private ReadOnly Host As " & hostType)
             If _info.BossTemplate IsNot Nothing Then w.Line("Private ReadOnly Boss As Enemy.Boss")
             If _info.BossTemplate IsNot Nothing Then w.Line("Private _bossManualMove As Boolean")
+            If _info.BossTemplate IsNot Nothing Then
+                w.Line("Private _bossNameInitialized As Boolean")
+                w.Line("Private _bossNameValue As String = """"")
+                w.Line("Private _bossNameCount As Integer = 0")
+            End If
             If _info.Scope = ProgramScope.Enemy Then w.Line("Private ReadOnly MaxHP As Double")
             w.Line("Private Halted As Boolean")
             For i = 0 To _info.Program.Scripts.Count - 1
@@ -743,6 +748,61 @@ Namespace Global.DanmakuDesigner.Core
                 w.Open("Public Sub EnableManualMovement()")
                 w.Line("_bossManualMove = True")
                 w.Close("End Sub")
+                w.Line()
+                w.Open("Private Sub EnsureBossName()")
+                w.Line("If _bossNameInitialized OrElse STG.NameArea Is Nothing Then Return")
+                w.Line("If Not STG.NameArea.IsLoaded Then Return")
+                w.Line("If Not BossNameStarsReady() Then Return")
+                w.Line("STG.NameArea.Visibility = Visibility.Visible")
+                w.Line("STG.NameArea.Initialize(_bossNameValue, _bossNameCount)")
+                w.Line("_bossNameInitialized = True")
+                w.Close("End Sub")
+                w.Line()
+                w.Open("Private Function BossNameStarsReady() As Boolean")
+                w.Line("Try")
+                w.Line("    Dim field = GetType(AgSTG.BossName).GetField(""Stars"", System.Reflection.BindingFlags.Instance Or System.Reflection.BindingFlags.NonPublic)")
+                w.Line("    Dim stars = TryCast(If(field Is Nothing, Nothing, field.GetValue(STG.NameArea)), Array)")
+                w.Line("    Return stars IsNot Nothing AndAlso stars.Length > 0 AndAlso stars.GetValue(0) IsNot Nothing")
+                w.Line("Catch")
+                w.Line("    Return False")
+                w.Line("End Try")
+                w.Close("End Function")
+                w.Line()
+                w.Open("Private Sub EnsureBossHealthBar()")
+                w.Line("Try")
+                w.Line("    Dim barField = GetType(AgSTG.Enemy.Boss).GetField(""HPBar"", System.Reflection.BindingFlags.Instance Or System.Reflection.BindingFlags.NonPublic)")
+                w.Line("    Dim bar = TryCast(If(barField Is Nothing, Nothing, barField.GetValue(Boss)), AgSTG.HPBar)")
+                w.Line("    If bar Is Nothing OrElse BossHealthBarReady(bar) Then Return")
+                w.Line("    Dim oldVisibility = bar.Visibility")
+                w.Line("    bar.Visibility = Visibility.Visible")
+                w.Line("    bar.UpdateLayout()")
+                w.Line("    bar.Visibility = oldVisibility")
+                w.Line("    If BossHealthBarReady(bar) Then Return")
+                w.Line("    Dim sField = GetType(AgSTG.HPBar).GetField(""s"", System.Reflection.BindingFlags.Instance Or System.Reflection.BindingFlags.NonPublic)")
+                w.Line("    Dim s = TryCast(If(sField Is Nothing, Nothing, sField.GetValue(bar)), Array)")
+                w.Line("    Dim srField = GetType(AgSTG.HPBar).GetField(""s_r"", System.Reflection.BindingFlags.Instance Or System.Reflection.BindingFlags.NonPublic)")
+                w.Line("    Dim sr = TryCast(If(srField Is Nothing, Nothing, srField.GetValue(bar)), Array)")
+                w.Line("    For i = 0 To 4")
+                w.Line("        Dim rectField = GetType(AgSTG.HPBar).GetField(""s"" & i, System.Reflection.BindingFlags.Instance Or System.Reflection.BindingFlags.NonPublic)")
+                w.Line("        Dim rotField = GetType(AgSTG.HPBar).GetField(""s"" & i & ""_r"", System.Reflection.BindingFlags.Instance Or System.Reflection.BindingFlags.NonPublic)")
+                w.Line("        If s IsNot Nothing AndAlso rectField IsNot Nothing Then s.SetValue(rectField.GetValue(bar), i)")
+                w.Line("        If sr IsNot Nothing AndAlso rotField IsNot Nothing Then sr.SetValue(rotField.GetValue(bar), i)")
+                w.Line("    Next")
+                w.Line("Catch")
+                w.Line("End Try")
+                w.Close("End Sub")
+                w.Line()
+                w.Open("Private Function BossHealthBarReady(bar As AgSTG.HPBar) As Boolean")
+                w.Line("Try")
+                w.Line("    Dim sField = GetType(AgSTG.HPBar).GetField(""s"", System.Reflection.BindingFlags.Instance Or System.Reflection.BindingFlags.NonPublic)")
+                w.Line("    Dim s = TryCast(If(sField Is Nothing, Nothing, sField.GetValue(bar)), Array)")
+                w.Line("    Dim srField = GetType(AgSTG.HPBar).GetField(""s_r"", System.Reflection.BindingFlags.Instance Or System.Reflection.BindingFlags.NonPublic)")
+                w.Line("    Dim sr = TryCast(If(srField Is Nothing, Nothing, srField.GetValue(bar)), Array)")
+                w.Line("    Return s IsNot Nothing AndAlso sr IsNot Nothing AndAlso s.Length > 0 AndAlso sr.Length > 0 AndAlso s.GetValue(0) IsNot Nothing AndAlso sr.GetValue(0) IsNot Nothing")
+                w.Line("Catch")
+                w.Line("    Return False")
+                w.Line("End Try")
+                w.Close("End Function")
                 w.Line()
             End If
 
@@ -824,9 +884,18 @@ Namespace Global.DanmakuDesigner.Core
             w.Open("Public Sub Tick()")
             w.Line("If Halted Then Return")
             If _needsTimer Then w.Line("RunTimers()")
+            If _info.BossTemplate IsNot Nothing Then w.Line("EnsureBossName()")
+            If _info.BossTemplate IsNot Nothing Then w.Line("EnsureBossHealthBar()")
             If _info.BossTemplate IsNot Nothing Then
-                w.Open("If Boss.CurrentSpell >= 0 AndAlso Boss.CurrentSpell < Boss.SpellCards.Count AndAlso Boss.SpellCards(Boss.CurrentSpell).IsEnabled Then")
+                w.Open("If Boss.CurrentSpell >= 0 AndAlso Boss.CurrentSpell < Boss.SpellCards.Count Then")
+                w.Line("Dim bossSpell = Boss.SpellCards(Boss.CurrentSpell)")
+                w.Open("If bossSpell.IsEnabled Then")
+                w.Open("If bossSpell.AtSpell AndAlso bossSpell.Type = SpellType.Time Then")
+                w.Line("Boss.IsEnabled = False")
+                w.Close("Else")
                 w.Line("Boss.IsEnabled = True")
+                w.Close("End If")
+                w.Close("End If")
                 w.Close("End If")
             End If
             For i = 0 To _info.Program.Scripts.Count - 1
@@ -992,9 +1061,23 @@ Namespace Global.DanmakuDesigner.Core
             w.Line("Canvas.SetLeft(Boss.Layer3, 16)")
             w.Line("Canvas.SetTop(Boss.Layer3, 16)")
             If template.UseResourceBossTextures Then
-                w.Line("If Boss.NormalTextures.Count > 0 Then Boss.Layer3.Fill = Boss.NormalTextures(0)")
+                w.Open("If Boss.NormalTextures.Count > 0 Then")
+                w.Line("Boss.Layer3.Fill = Boss.NormalTextures(0)")
+                w.Line("Dim bossImage = Boss.NormalTextures(0).ImageSource")
+                w.Open("If bossImage IsNot Nothing AndAlso bossImage.Width > 0 AndAlso bossImage.Height > 0 Then")
+                w.Line("Boss.Layer3.Width = bossImage.Width")
+                w.Line("Boss.Layer3.Height = bossImage.Height")
+                w.Line("Canvas.SetLeft(Boss.Layer3, (128.0 - bossImage.Width) / 2.0)")
+                w.Line("Canvas.SetTop(Boss.Layer3, (128.0 - bossImage.Height) / 2.0)")
+                w.Line("Boss.Layer3_scale.CenterX = bossImage.Width / 2.0")
+                w.Line("Boss.Layer3_scale.CenterY = bossImage.Height / 2.0")
+                w.Close("End If")
+                w.Close("End If")
             End If
-            w.Line("STG.NameArea.Initialize(" & VBCodeGenerator.Quote(If(String.IsNullOrWhiteSpace(template.BossName), template.Name, template.BossName)) & ", " & spells.Count & ")")
+            w.Line("_bossNameValue = " & VBCodeGenerator.Quote(If(String.IsNullOrWhiteSpace(template.BossName), template.Name, template.BossName)))
+            w.Line("_bossNameCount = " & spells.Count.ToString(CultureInfo.InvariantCulture))
+            w.Line("EnsureBossName()")
+            w.Line("EnsureBossHealthBar()")
             For i = 0 To _info.Program.Scripts.Count - 1
                 Dim script = _info.Program.Scripts(i)
                 If script.Definition IsNot Nothing AndAlso script.Definition.HatKind = HatKind.BossInit Then
@@ -1013,7 +1096,7 @@ Namespace Global.DanmakuDesigner.Core
                     Continue For
                 End If
                 w.Line(target & ".Add(New System.Windows.Media.ImageBrush(New System.Windows.Media.Imaging.BitmapImage(New System.Uri(" &
-                       VBCodeGenerator.Quote(uri) & ", System.UriKind.Absolute))))")
+                       VBCodeGenerator.Quote(uri) & ", System.UriKind.Absolute)) With {.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad}))")
             Next
         End Sub
 
@@ -1177,7 +1260,10 @@ Namespace Global.DanmakuDesigner.Core
                     w.Line("Me.Halted = True")
                     w.Line("Return")
                 Case "boss_next_spell"
-                    If _info.BossTemplate IsNot Nothing Then w.Line("Boss.NextSpell()")
+                    If _info.BossTemplate IsNot Nothing Then
+                        w.Line("EnsureBossHealthBar()")
+                        w.Line("Boss.NextSpell()")
+                    End If
                 Case "next_stage"
                     w.Line("If STG.CurrentStage >= 0 AndAlso STG.CurrentStage < STG.Stages.Count Then STG.Stages(STG.CurrentStage).Clear()")
                 Case "play_dialogue"

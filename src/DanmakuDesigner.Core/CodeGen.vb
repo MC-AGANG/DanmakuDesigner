@@ -658,6 +658,10 @@ Namespace Global.DanmakuDesigner.Core
             sb.AppendLine("    <Reference Include=""ManagedBass"">")
             sb.AppendLine("      <HintPath>$(AgSTGRepo)\dll\Bass\ManagedBass.dll</HintPath>")
             sb.AppendLine("    </Reference>")
+            sb.AppendLine("    <Reference Include=""wpfpslib"">")
+            sb.AppendLine("      <HintPath>$(AgSTGRepo)\dll\wpfpslib\wpfpslib.dll</HintPath>")
+            sb.AppendLine("      <Private>True</Private>")
+            sb.AppendLine("    </Reference>")
             sb.AppendLine("  </ItemGroup>")
             sb.AppendLine()
             sb.AppendLine("</Project>")
@@ -922,6 +926,9 @@ Namespace Global.DanmakuDesigner.Core
                 w.Open("If _bossManualMove Then")
                 w.Line("Host.X += Host.Speed * Math.Sin(Host.Direction / 180.0 * Math.PI)")
                 w.Line("Host.Y -= Host.Speed * Math.Cos(Host.Direction / 180.0 * Math.PI)")
+                w.Close("End If")
+                w.Open("If STG.BackLayer_BlackHole IsNot Nothing Then")
+                w.Line("STG.BackLayer_BlackHole.Position = New System.Windows.Point(Host.X / 384.0, Host.Y / 448.0)")
                 w.Close("End If")
             End If
             w.Close("End Sub")
@@ -1321,13 +1328,20 @@ Namespace Global.DanmakuDesigner.Core
                     w.Line("Host.Speed = Math.Sqrt(" & dx & " * " & dx & " + " & dy & " * " & dy & ") / Math.Max(1.0, CDbl(" & EmitValue(block.GetField("frames")) & "))")
                     MarkBossManualMove(w)
                 Case "move_center"
-                    Dim dx = NextLocal("dx")
-                    Dim dy = NextLocal("dy")
-                    w.Line("Dim " & dx & " As Double = 192.0 - Host.X")
-                    w.Line("Dim " & dy & " As Double = 128.0 - Host.Y")
-                    w.Line("Host.Direction = System.Windows.Vector.AngleBetween(New System.Windows.Vector(0, -1), New System.Windows.Vector(" & dx & ", " & dy & "))")
-                    w.Line("Host.Speed = Math.Sqrt(" & dx & " * " & dx & " + " & dy & " * " & dy & ") / Math.Max(1.0, CDbl(" & EmitValue(block.GetField("frames")) & "))")
-                    MarkBossManualMove(w)
+                    If _info.BossTemplate IsNot Nothing Then
+                        w.Line("_bossManualMove = False")
+                        w.Line("Boss.MoveToCenter(CInt(" & EmitValue(block.GetField("frames")) & "))")
+                    Else
+                        Dim dx = NextLocal("dx")
+                        Dim dy = NextLocal("dy")
+                        w.Line("Dim " & dx & " As Double = 192.0 - Host.X")
+                        w.Line("Dim " & dy & " As Double = 128.0 - Host.Y")
+                        w.Line("Host.Direction = System.Windows.Vector.AngleBetween(New System.Windows.Vector(0, -1), New System.Windows.Vector(" & dx & ", " & dy & "))")
+                        w.Line("Host.Speed = Math.Sqrt(" & dx & " * " & dx & " + " & dy & " * " & dy & ") / Math.Max(1.0, CDbl(" & EmitValue(block.GetField("frames")) & "))")
+                    End If
+                Case "boss_default_move"
+                    w.Line("_bossManualMove = False")
+                    w.Line("Boss.DefaultMove(CInt(" & EmitValue(block.GetField("frames")) & "))")
                 Case "set_position"
                     w.Line("Host.X = " & EmitValue(block.GetField("x")))
                     w.Line("Host.Y = " & EmitValue(block.GetField("y")))

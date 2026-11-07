@@ -530,12 +530,21 @@ Namespace Global.DanmakuDesigner.Core
             AddField(d, "y", FieldKind.Number, "128", 44, "", "目标 Y", -1000, 2000)
             AddField(d, "frames", FieldKind.Number, "60", 40, "", "移动帧数", 1, 100000)
 
-            d = Def("move_center", "移动到屏幕中央", BlockCategory.Motion, BlockKind.Stack, BlockScope.EnemyOnly, HatKind.None,
-                    "在指定帧数内移动到 (192, 128)。")
-            AddLabel(d, "移动到屏幕中央，用时 ")
+            d = Def("move_center", "移至中心", BlockCategory.Motion, BlockKind.Stack, BlockScope.EnemyOnly, HatKind.None,
+                    "调用引擎 Boss.MoveToCenter：在指定帧数内移动到 (192, 128)。")
+            AddLabel(d, "移至中心，用时 ")
             AddFieldPart(d, "frames")
             AddLabel(d, " 帧")
             AddField(d, "frames", FieldKind.Number, "60", 40, "", "移动帧数", 1, 100000)
+            d.RequiresBoss = True
+
+            d = Def("boss_default_move", "Boss 默认移动", BlockCategory.Motion, BlockKind.Stack, BlockScope.EnemyOnly, HatKind.None,
+                    "调用引擎 Boss.DefaultMove：按持续时间随机向自机方向移动，靠近边缘时会转向。")
+            AddLabel(d, "Boss 默认移动，用时 ")
+            AddFieldPart(d, "frames")
+            AddLabel(d, " 帧")
+            AddField(d, "frames", FieldKind.Number, "60", 40, "", "移动帧数", 1, 100000)
+            d.RequiresBoss = True
 
             d = Def("set_position", "设置位置", BlockCategory.Motion, BlockKind.Stack, BlockScope.Both, HatKind.None,
                     "直接把对象传送到指定坐标。")

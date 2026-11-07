@@ -87,6 +87,7 @@ Public Module EngineStageCompiler
             GetType(ResourcePack.Textures),
             GetType(ResourcePack.TH07.Textures),
             GetType(ManagedBass.Bass),
+            GetType(wpfpslib.BlackHoleEffect),
             GetType(System.Windows.UIElement),
             GetType(System.Linq.Enumerable),
             GetType(Microsoft.VisualBasic.Constants),

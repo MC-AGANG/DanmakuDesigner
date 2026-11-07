@@ -44,6 +44,10 @@
       <HintPath>Lib\Roslyn\Microsoft.CodeAnalysis.VisualBasic.dll</HintPath>
       <Private>true</Private>
     </Reference>
+    <Reference Include="wpfpslib">
+      <HintPath>..\..\..\AgSTG\dll\wpfpslib\wpfpslib.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
   </ItemGroup>
 
   <ItemGroup>
